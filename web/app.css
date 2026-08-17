@@ -808,3 +808,13 @@ pre:hover .pre-copy, .pre-copy:focus-visible{ opacity:1; }
   background:none; border:1px solid var(--rule); border-radius:var(--radius-s);
 }
 .sc-close:hover{ color:var(--ink); border-color:var(--rule-strong); }
+
+
+/* ===== 健康检查页 ===== */
+.hl-count{ font-family:var(--font-sans); font-size:11px; color:var(--accent);
+  border:1px solid var(--rule); border-radius:8px; padding:1px 7px; vertical-align:2px; margin-left:6px; }
+.hl-list{ list-style:none; padding:0; margin:0 0 8px; }
+.hl-list li{ padding:5px 0; border-bottom:1px solid var(--rule); font-size:13.5px; }
+.hl-list code{ font-family:var(--font-mono); font-size:12px; color:var(--muted-2); }
+.hl-size{ float:right; color:var(--muted-2); font-size:12px; font-family:var(--font-sans); }
+.hl-actions{ margin-top:22px; display:flex; gap:10px; }

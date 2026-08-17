@@ -1,9 +1,9 @@
 /* gallery.js — 目录图库: 瀑布网格 / 复制 md 引用 / Lightbox(含删除) */
-import { $, $$, esc, api, icon, showdialog, toast, copyText, fmtSize } from './ui.js?v=8';
-import { lightboxOpen } from './viewer.js?v=8';
+import { $, $$, esc, api, icon, showdialog, toast, copyText, fmtSize } from './ui.js?v=9';
+import { lightboxOpen } from './viewer.js?v=9';
 
 /* 图片删除能力开关: 后端补 /api/image/delete 后置 true (当前后端冻结, 缺该端点) */
-const IMAGE_DELETE_API = false;
+const IMAGE_DELETE_API = true;
 
 export async function showGallery(dir) {
   const view = $('#view-gallery');
@@ -62,7 +62,8 @@ async function delImage(im, imgs, fromLightbox = false) {
     return;
   }
   try {
-    await api('/api/image/delete', { method: 'POST', json: { url: im.url } });
+    const relPath = im.url.replace(/^\/files\//, '');   // /files/x → x (docs 相对)
+    await api('/api/image/delete', { method: 'POST', json: { url: relPath } });
     toast('削除しました');
     const dir = ($('#g-title').textContent || '').replace(/^ギャラリー — /, '');
     showGallery(dir);

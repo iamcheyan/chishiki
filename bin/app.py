@@ -323,6 +323,9 @@ class Handler(SimpleHTTPRequestHandler):
                 if im["url"] not in seen:
                     seen.add(im["url"]); uniq.append(im)
             return self._json(200, {"ok": True, "dir": rel, "images": uniq[:500]})
+        if p.path == "/api/health":
+            return self._json(200, {"ok": True, **_health_report(self.docs_dir)})
+
         if p.path == "/api/meta":
             n = len([m for m in self.docs_dir.rglob("*.md") if not m.name.startswith("_")])
             return self._json(200, {"ok": True, "docs": n,
@@ -403,6 +406,11 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._json(409, {"ok": False, "error": "exists"})
             try:
                 src.rename(dst)
+                # 同步迁移 <stem>_assets 目录(名字与文档脱钩问题)
+                old_assets = src.parent / f"{src.stem}_assets"
+                new_assets = dst.parent / f"{dst.stem}_assets"
+                if old_assets.is_dir() and not new_assets.exists():
+                    old_assets.rename(new_assets)
             except OSError:
                 return self._json(500, {"ok": False, "error": "rename failed"})
             self._refresh()
@@ -427,6 +435,45 @@ class Handler(SimpleHTTPRequestHandler):
 
         if p.path == "/api/image":
             return self._upload_image()
+
+        if p.path == "/api/image/delete":
+            payload = self._body_json()
+            if payload is None:
+                return self._json(400, {"ok": False, "error": "bad json"})
+            img = _safe_asset_path(d, str(payload.get("url", "")), must_exist=True)
+            if img is None:
+                return self._json(404, {"ok": False, "error": "not found"})
+            try:
+                img.unlink()
+            except OSError:
+                return self._json(500, {"ok": False, "error": "delete failed"})
+            self._refresh()
+            return self._json(200, {"ok": True})
+
+
+        if p.path == "/api/clean":
+            # 清理孤儿图片(未被任何 md 引用的图片文件), dry_run 默认 true
+            payload = self._body_json() or {}
+            dry = bool(payload.get("dry_run", True))
+            report = _health_report(d)
+            deleted = []
+            if not dry:
+                for item in report["orphan_images"]:
+                    try:
+                        (d / item["path"]).unlink()
+                        deleted.append(item["path"])
+                    except OSError:
+                        pass
+                # 清掉空 assets 目录
+                for ad in report["empty_asset_dirs"]:
+                    try:
+                        (d / ad).rmdir()
+                    except OSError:
+                        pass
+                self._refresh()
+            return self._json(200, {"ok": True, "dry_run": dry,
+                                    "candidates": len(report["orphan_images"]),
+                                    "deleted": deleted})
 
         return self._json(404, {"ok": False, "error": "not found"})
 
@@ -489,6 +536,88 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(500, {"ok": False, "error": "write failed"})
         rel = dest.relative_to(md.parent).as_posix()
         return self._json(200, {"ok": True, "path": rel, "markdown": f"![image]({rel})"})
+
+
+def _safe_asset_path(root: Path, url: str, must_exist: bool = False) -> Path | None:
+    """图片删除: 校验 url(相对 docs 的资源路径, 限图片后缀, 防穿越)"""
+    url = (url or "").strip().lstrip("/")
+    if not url or ".." in url.split("/"):
+        return None
+    p = (root / url)
+    try:
+        p = p.resolve()
+        p.relative_to(root.resolve())
+    except (ValueError, OSError):
+        return None
+    if p.suffix.lower() not in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp"}:
+        return None
+    if must_exist and not p.is_file():
+        return None
+    return p
+
+
+_RE_MD_LINK = re.compile(r"!\[[^\]]*\]\(([^)\s]+)")
+
+
+def _health_report(d: Path) -> dict:
+    """健康检查: 断链文档/丢失图片/孤儿图片/空目录/重复标题"""
+    docs = list(d.rglob("*.md"))
+    referenced: set[str] = set()          # 被引用的图片(相对文档目录)
+    broken_docs, missing_images, dup_titles = [], [], []
+    seen_titles: dict[str, str] = {}
+    for md in docs:
+        rel = md.relative_to(d).as_posix()
+        try:
+            text = md.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        # 文档内链 [x](y.md) 断链
+        for m in re.finditer(r"\[[^\]]*\]\(([^)#\s]+\.md)\)", text):
+            target = m.group(1)
+            tp = (md.parent / target).resolve()
+            try:
+                tp.relative_to(d.resolve())
+            except ValueError:
+                continue
+            if not tp.exists():
+                broken_docs.append({"doc": rel, "target": target})
+        # 图片引用
+        for m in _RE_MD_LINK.finditer(text):
+            raw = m.group(1)
+            ip = (md.parent / raw).resolve()
+            try:
+                ip.relative_to(d.resolve())
+            except ValueError:
+                continue
+            referenced.add(ip.as_posix())
+            if not ip.exists():
+                missing_images.append({"doc": rel, "url": raw})
+        h1 = re.search(r"^# (.+)$", text, re.M)
+        if h1:
+            t = h1.group(1).strip()
+            if t in seen_titles:
+                dup_titles.append({"title": t, "a": seen_titles[t], "b": rel})
+            else:
+                seen_titles[t] = rel
+    # 孤儿图片: assets 目录下未被引用的图片
+    orphan_images = []
+    empty_dirs = []
+    for img in d.rglob("*"):
+        if img.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp"}:
+            if img.resolve().as_posix() not in referenced:
+                stat = img.stat()
+                orphan_images.append({"path": img.relative_to(d).as_posix(), "size": stat.st_size})
+        elif img.is_dir() and img.name.endswith("_assets"):
+            if not any(img.iterdir()):
+                empty_dirs.append(img.relative_to(d).as_posix())
+    return {
+        "docs": len(docs),
+        "broken_doc_links": broken_docs,
+        "missing_images": missing_images,
+        "orphan_images": orphan_images,
+        "empty_asset_dirs": empty_dirs,
+        "dup_titles": dup_titles,
+    }
 
 
 def run_server(docs_dir: Path, host: str, port: int) -> None:
