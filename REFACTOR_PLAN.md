@@ -275,3 +275,24 @@ chishiki/
 **E2E（CDP）**：桌面深层文档 crumb 2 目录+copy 可见且 `elementFromPoint` 真实命中、copy→toast、目录点击 expandTo 树完整（11 文件）；移动 390 crumb-copy 隐藏、抽屉→⋯ 菜单 5 项含新复制项→点击 toast；五视图（doc/edit/git/health/gallery/home-redirect）crumb 文案逐一正确；全程零 console error。
 
 **遗留**：用户在飞 `bin/highlight.py`（代码高亮 WIP，未动）；移动端面包屑文字仍 0 宽（顶栏超编，属用户设计决策——如需展示需缩 brand 或移按钮，未擅动）。
+
+### 8.10 第七轮（d086b23→）：代码高亮系统验证 + ⌘E 补实现
+
+**背景**：用户交付 d086b23——零依赖自研高亮：后端 `bin/highlight.py`（9 语言 tokenizer，服务端预高亮，mdrender 围栏接入带异常回退）+ 编辑器预览 JS 版 `hlCode()`（同 token class）+ 4 主题配色。
+
+**验证矩阵（CDP+直测）**：
+
+| 项 | 结果 |
+|---|---|
+| 服务端高亮（真实文档） | Python memo → 8 kwd/1 str，样本 `from` ✅ |
+| 9 语言 tokenizer（直测 mdrender） | kwd×12/str×3/com×4/num×1 覆盖 python/js/sh/json/yaml/sql/html/css/ini；无语言围栏纯转义 ✅ |
+| 围栏内 XSS | `<script>`/`<img onerror>` 在 html 围栏内→转义文本且被 token 化（`&lt;script` 入 tk-kwd span），零活标签 ✅（注：整串 `&lt;script&gt;` grep 会因 span 拆分误报缺失，需按片段断言） |
+| 编辑器预览同 token | 预览 8 kwd/1 str 与服务端逐一相等 ✅ |
+| 4 主题配色 | tk-kwd 计算色：紙墨 rgb(74,85,104)/ダーク rgb(122,134,153)/GH-Light rgb(207,34,46)/GH-Dark rgb(255,123,114)（GitHub 官方红系）✅ |
+| 版本审计 | 9 模块 v15 零分裂、CSS v16 ✅ |
+
+**修复 1——版本双重违规**：d086b23 改 `app.css`（+31 行主题色）却把标签 v15 **降回** v14；改 `editor.js`（+40 行 hlCode）而 JS 版本未动。v14/v15 均曾被真实加载，浏览器启发式缓存会向回访用户吐出无高亮配色的旧 CSS 与无高亮的旧 editor。已升 CSS v16、JS 锁步 v15（含 git.js 硬编码）。
+
+**修复 2——⌘E 死承诺**：快捷键帮助面板自第一轮起承诺「⌘/Ctrl + E ドキュメントを編集」，但全局 keydown 从未实现该分支。已补：文档视图下 ⌘/Ctrl+E → `#/edit/<当前文档>`（guard：仅 view-doc 可见且有当前文档时劫持，编辑器内不误触）。实测 ⌘E 进入编辑→预览高亮→history.back 返回阅读，零错误。
+
+本轮回归：`py_compile`+`node --check` 全过；CDP 零 console error；docs/ 与基线一致（未触碰）。

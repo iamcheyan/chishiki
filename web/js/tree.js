@@ -1,6 +1,6 @@
 /* tree.js — 侧栏文档树: 展开/折叠记忆, 当前下划线, hover 操作, 最近+收藏 */
 const VSN = (import.meta.url.match(/\?v=\d+/) || [''])[0];
-import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, copyText } from './ui.js?v=14';
+import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, copyText } from './ui.js?v=15';
 
 const LS_EXPANDED = 'chishiki:expanded';
 const LS_RECENT = 'chishiki:recent';
