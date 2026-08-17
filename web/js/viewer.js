@@ -1,5 +1,5 @@
 /* viewer.js — 阅读渲染(图片重写/表格包裹) + 大纲滚动spy + Lightbox */
-import { $, $$, esc, api, fileUrl, icon, fmtTime } from './ui.js?v=12';
+import { $, $$, esc, api, fileUrl, icon, fmtTime } from './ui.js?v=13';
 
 export const state = { currentPath: null, pendingAnchor: null };
 

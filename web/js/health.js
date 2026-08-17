@@ -1,5 +1,5 @@
 /* health.js — 健康检查 + 孤儿图片清理 */
-import { $, $$, api, esc, toast, showdialog } from './ui.js?v=12';
+import { $, $$, api, esc, toast, showdialog } from './ui.js?v=13';
 
 export async function showHealth() {
   const view = $('#view-health');

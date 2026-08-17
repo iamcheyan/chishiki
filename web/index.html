@@ -18,7 +18,7 @@
   }catch(e){}
 })();
 </script>
-<link rel="stylesheet" href="app.css?v=12">
+<link rel="stylesheet" href="app.css?v=13">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='4' y='3' width='13' height='18' rx='1.5' fill='none' stroke='%234A5568' stroke-width='1.5'/%3E%3Cpath d='M8 8h5M8 12h5' stroke='%234A5568' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E">
 </head>
 <body>
@@ -31,6 +31,17 @@
     <div class="brand">chishiki</div>
     <span class="brand-sep" aria-hidden="true"></span>
     <span id="crumb" class="crumb"></span>
+    <div class="topbar-actions">
+      <button id="btn-search-top" class="top-search" aria-label="検索" title="全文検索 (⌘K)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <span class="ts-label">検索</span>
+        <kbd class="ts-kbd">⌘K</kbd>
+      </button>
+      <button id="btn-newdoc-top" class="top-newdoc" aria-label="新規ドキュメント" title="新規ドキュメント">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        <span class="tn-label">新規</span>
+      </button>
+    </div>
     <div class="topbar-right">
       <span id="save-state" class="save-state" aria-live="polite"><span class="dot"></span><span class="label"></span></span>
       <button id="btn-outline" class="icon-btn mobile-only" aria-label="目次" aria-expanded="false" hidden>
@@ -51,17 +62,6 @@
 
   <div id="layout">
     <aside id="sidebar" aria-label="ライブラリ">
-      <div class="side-top">
-        <button id="btn-search-open" class="side-search">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-          <span>検索…</span>
-          <kbd>⌘K</kbd>
-        </button>
-        <button id="btn-newdoc" class="side-new">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-          <span>新規</span>
-        </button>
-      </div>
       <nav id="tree" class="tree" aria-label="ドキュメント"></nav>
       <section id="recent-sec" class="side-sec" hidden>
         <h2 class="side-h">最近</h2>
@@ -192,6 +192,6 @@
 
 <input id="file-input" type="file" accept="image/*" hidden>
 
-<script type="module" src="js/app.js?v=12"></script>
+<script type="module" src="js/app.js?v=13"></script>
 </body>
 </html>

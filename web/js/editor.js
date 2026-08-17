@@ -1,7 +1,7 @@
 /* editor.js — 编辑器: textarea+分屏预览 / 工具栏 / 贴图上传 / 草稿 / 保存 / 冲突检测 / 文档操作 */
-import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, fileUrl } from './ui.js?v=12';
-import * as tree from './tree.js?v=12';
-import * as search from './search.js?v=12';
+import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, fileUrl } from './ui.js?v=13';
+import * as tree from './tree.js?v=13';
+import * as search from './search.js?v=13';
 
 const DRAFT_PREFIX = 'chishiki:draft:';
 
@@ -538,7 +538,7 @@ export async function newDocFlow(dirPath) {
     const walk = nodes => { for (const nd of nodes || []) { if (nd.type === 'dir') { dirs.push(nd.path); walk(nd.children); } } };
     walk(tree.treeState.data);
     const items = [{ label: '（ルート）', value: '' }, ...dirs.map(d => ({ label: d, value: d }))];
-    dir = await menu($('#btn-newdoc'), items);
+    dir = await menu($('#btn-newdoc-top'), items);
     if (dir === null) return;
   }
   const name = await showdialog({
@@ -577,7 +577,7 @@ export async function moveFlow(node) {
   const walk = nodes => { for (const nd of nodes || []) { if (nd.type === 'dir' && nd.path !== dirname(node.path)) { dirs.push(nd.path); walk(nd.children); } } };
   walk(tree.treeState.data);
   const items = [{ label: '（ルート）', value: '' }, ...dirs.map(d => ({ label: d, value: d }))];
-  const dest = await menu($('.tree .file.cur .a-more') || $('#btn-newdoc'), items);
+  const dest = await menu($('.tree .file.cur .a-more') || $('#btn-newdoc-top'), items);
   if (dest === null) return;
   try {
     const src = await api('/api/doc', { query: { path: node.path } });

@@ -331,7 +331,9 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(200, {"ok": True, **_health_report(self.docs_dir)})
 
         if p.path == "/api/git/status":
-            out = _git(self.docs_dir, "status", "--porcelain")
+            out, rc = _git_rc(self.docs_dir, "status", "--porcelain")
+            if rc:
+                return self._json(500, {"ok": False, "error": "git failed", "detail": out.strip()[:200]})
             files = [l[3:] for l in out.splitlines() if l.strip()]
             return self._json(200, {"ok": True, "dirty": len(files), "files": files[:100]})
 
@@ -344,7 +346,9 @@ class Handler(SimpleHTTPRequestHandler):
                 if md is None:
                     return self._json(404, {"ok": False, "error": "not found"})
                 args += ["--", md.relative_to(self.docs_dir).as_posix()]
-            out = _git(self.docs_dir, *args)
+            out, rc = _git_rc(self.docs_dir, *args)
+            if rc:
+                return self._json(500, {"ok": False, "error": "git failed", "detail": out.strip()[:200]})
             entries = []
             for l in out.splitlines():
                 parts = l.split("|", 2)
@@ -535,8 +539,12 @@ class Handler(SimpleHTTPRequestHandler):
             msg = str(payload.get("message") or "").strip() or f"chishiki: update {time.strftime('%Y-%m-%d %H:%M')}"
             if len(msg) > 200:
                 return self._json(400, {"ok": False, "error": "message too long"})
-            _git(self.docs_dir, "add", "-A")
-            out = _git(self.docs_dir, "commit", "-m", msg)
+            _, rc = _git_rc(self.docs_dir, "add", "-A")
+            if rc:
+                return self._json(500, {"ok": False, "error": "add failed", "detail": ""})
+            out, rc = _git_rc(self.docs_dir, "commit", "-m", msg)
+            if rc:
+                return self._json(500, {"ok": False, "error": "commit failed", "detail": out.strip()[:200]})
             return self._json(200, {"ok": True, "result": out.strip()[:500]})
 
         if p.path == "/api/git/restore":
@@ -547,7 +555,9 @@ class Handler(SimpleHTTPRequestHandler):
             h = str(payload.get("hash", "")).strip()
             if md is None or not re.fullmatch(r"[0-9a-f]{6,40}", h):
                 return self._json(400, {"ok": False, "error": "invalid"})
-            out = _git(self.docs_dir, "checkout", h, "--", md.relative_to(self.docs_dir).as_posix())
+            out, rc = _git_rc(self.docs_dir, "checkout", h, "--", md.relative_to(self.docs_dir).as_posix())
+            if rc:
+                return self._json(500, {"ok": False, "error": "restore failed", "detail": out.strip()[:200]})
             return self._json(200, {"ok": True, "result": out.strip()[:300]})
 
         return self._json(404, {"ok": False, "error": "not found"})
@@ -710,14 +720,19 @@ def _health_report(d: Path) -> dict:
     }
 
 
-def _git(docs_dir: Path, *args: str) -> str:
-    """安全执行 git 只读/指定命令(超时10s)"""
+def _git_rc(docs_dir: Path, *args: str) -> tuple[str, int]:
+    """执行 git 命令, 返回 (输出, returncode); 异常按 128 处理"""
     try:
         r = subprocess.run(["git", *args], cwd=str(docs_dir), capture_output=True,
                            text=True, timeout=10)
-        return (r.stdout or "") + (("\n[stderr] " + r.stderr) if r.returncode else "")
+        return (r.stdout or "") + (("\n[stderr] " + r.stderr) if r.returncode else ""), r.returncode
     except (OSError, subprocess.TimeoutExpired) as e:
-        return f"[error] {e}"
+        return f"[error] {e}", 128
+
+
+def _git(docs_dir: Path, *args: str) -> str:
+    """安全执行 git 只读命令(不判 rc, 兼容旧调用)"""
+    return _git_rc(docs_dir, *args)[0]
 
 
 def run_server(docs_dir: Path, host: str, port: int) -> None:
