@@ -212,3 +212,21 @@ chishiki/
 | 10 | Lightbox 点空白关闭（用户新增） | 代码审读确认逻辑完整（`moved` 阈值 6px 防误触），随 #1 冒烟 | — |
 
 清理：测试文档/资产/空目录全部移除，`git status docs/` 干净。回归：`node --check` 7/7、console 零 error、首屏 v8 冒烟（树/大纲/图片加载）全绿。
+
+### 8.7 第四轮：健康检查系统收口 + 后端缺口闭合（2026-08-17 午後）
+
+用户 WIP（`/api/health`・`/api/clean`・`/api/image/delete`・rename 迁移 assets・`health.js` 健康页）本轮完成接线并端到端验证；期间发现并修复其一处回归。
+
+| # | 项 | 结果 | 证据 |
+|---|---|---|---|
+| 1 | `#btn-health` 死按钮（HTML 有、无 JS 接线） | 修复 | `app.js` 绑定 → `#/health`；CDP 进入健康页，11 篇全绿 |
+| 2 | `health.js` 引入未版本化 `./ui.js`（与 `?v=` 实例并存 → activeDlg/activeMenu 状态分裂） | 修复 | 统一 `?v=9`（后用户升 v10，见下） |
+| 3 | **图片删除 API 闭合（缺口#1）** | ✅ | 贴图→图库删→confirm→toast「削除しました」→磁盘文件消失（assets 目录转空） |
+| 4 | 健康检查+清理 | ✅ | 删图后检出「参照切れ画像+空ディレクトリ」；dry-run→confirm→空目录清除，`empty_asset_dirs→0` |
+| 5 | **rename 迁移 assets（缺口#2）— 用户版本有回归** | 修复后 ✅ | 用户实现只搬目录不改写 md 引用（引用全断 404），且目标 assets 已存在时静默跳过（引用滞留旧目录）。修复：目标不存在→整迁+改写引用 `<旧stem>_assets/`→`<新stem>_assets/`；已存在→逐文件合并（冲突加后缀）+rmdir 旧目录+同样改写引用。场景A（整迁）与场景C（合并）均实测：磁盘归位、引用改写、图片加载、health 全绿 |
+| 6 | 清理对话框文案（只有空目录时也报「孤立画像 0 件」） | 修复 | 按 candidates/empty 实际数量拼装 |
+| 7 | 面包屑目录点击（`debe45d` 的 expandTo 动态导入） | ✅ | 点击后树完整（11 文件）、零 error——版本统一后动态/静态导入同实例 |
+
+**遗留（用户在飞工作，未动）**：工作区含未完成的 git 版本面板（`web/js/git.js`+`view-git` 已接线，`/api/git/status`・`/api/git/log` 后端未实现，当前 404）；`index.html` 标签已升 `app.js?v=10` 但模块静态导入仍 `?v=9`、CSS 仍 v9——**版本错位会再触发双实例**（`app.js?v=10` 动态导入解析为 `ui.js?v=10`，与静态 `ui.js?v=9` 并存，VSN 机制要求静态/动态/标签三者同版本）。建议用户收口时把 CSS/JS 标签与全部 import 一同升 v10。
+
+本轮回归：`py_compile` 通过、服务重启后 health 全绿、CDP 全流程（阅读/代码块复制/?帮助/健康页/编辑器进出/搜索）零 console error；docs/ 测试产物清理完毕与 git 基线一致。
