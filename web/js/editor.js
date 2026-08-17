@@ -1,7 +1,7 @@
 /* editor.js — 编辑器: textarea+分屏预览 / 工具栏 / 贴图上传 / 草稿 / 保存 / 冲突检测 / 文档操作 */
-import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, fileUrl } from './ui.js?v=15';
-import * as tree from './tree.js?v=15';
-import * as search from './search.js?v=15';
+import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, fileUrl } from './ui.js?v=16';
+import * as tree from './tree.js?v=16';
+import * as search from './search.js?v=16';
 
 const DRAFT_PREFIX = 'chishiki:draft:';
 
@@ -65,10 +65,20 @@ const HL_KW = {
   sh: /^(if|then|else|elif|fi|for|while|do|done|case|esac|function|in|return|break|continue|local|export|source|set|echo)$/,
   json: /^(true|false|null)$/,
 };
-const HL_MAP = { py: 'python', python: 'python', js: 'js', javascript: 'js', ts: 'js', typescript: 'js', bash: 'sh', sh: 'sh', shell: 'sh', json: 'json' };
+const HL_MAP = { py: 'python', python: 'python', js: 'js', javascript: 'js', ts: 'js', typescript: 'js', bash: 'sh', sh: 'sh', shell: 'sh', json: 'json', markdown: 'plain', md: 'plain', text: 'plain', txt: 'plain' };
+/* 无语言标注时按关键词命中率嗅探(与后端 _sniff_lang 同规则: ≥2命中取最优) */
+function hlSniff(code) {
+  let best = null, bestHits = 0;
+  for (const cand of ['python', 'sh', 'js', 'json']) {
+    let hits = 0;
+    for (const w of code.match(/\b[A-Za-z_][A-Za-z0-9_]{1,}\b/g) || []) if (HL_KW[cand].test(w)) hits++;
+    if (hits > bestHits) { best = cand; bestHits = hits; }
+  }
+  return bestHits >= 2 ? best : '';
+}
 function hlCode(code, langRaw) {
-  const lang = HL_MAP[(langRaw || '').toLowerCase()];
-  if (!lang) return escText(code);
+  let lang = HL_MAP[(langRaw || '').toLowerCase()] || hlSniff(code);
+  if (!lang || lang === 'plain') return escText(code);
   const esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   let out = esc(code);
   const wrap = (re, cls) => { out = out.replace(re, m => '\u0001' + cls + '\u0002' + m + '\u0003'); };

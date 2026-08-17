@@ -296,3 +296,15 @@ chishiki/
 **修复 2——⌘E 死承诺**：快捷键帮助面板自第一轮起承诺「⌘/Ctrl + E ドキュメントを編集」，但全局 keydown 从未实现该分支。已补：文档视图下 ⌘/Ctrl+E → `#/edit/<当前文档>`（guard：仅 view-doc 可见且有当前文档时劫持，编辑器内不误触）。实测 ⌘E 进入编辑→预览高亮→history.back 返回阅读，零错误。
 
 本轮回归：`py_compile`+`node --check` 全过；CDP 零 console error；docs/ 与基线一致（未触碰）。
+
+### 8.11 第八轮（214f7e9→）：高亮收尾验证 + 嗅探预览对等移植
+
+**背景**：用户交付 214f7e9——①纸墨主题 token 对比度加强（字符串赭石/关键词靛青/数字紫/键名松绿）②关键词兜底（无其它 token 命中时剩余段整段扫词）③无语言围栏自动嗅探（python/sh/js/json 按关键词命中 ≥2 取最优）④`md/text/txt/markdown` 显式映射 plain。
+
+**验证矩阵（直测 mdrender）**：嗅探 python（def/return/None 3 kwd）✅；sh 嗅探（for/do/done/in）✅；纯散文不误触（0 token）✅；text 围栏保持 plain ✅；兜底（class/pass 纯关键词代码染色）✅；XSS 双路径（无语言+嗅探为 sh 的围栏内 `<script>`/`<img onerror>` 均转义零活标签）✅。CDP：纸墨新配色计算值落地（str rgb(140,90,60) 赭石/kwd rgb(62,92,143) 靛青/num rgb(122,78,140) 紫）✅。
+
+**修复 1——CSS 版本再降级（第四例同型事故）**：214f7e9 改 `app.css`（+25 行配色）却把标签 **v16 降回 v15**；而 v15 曾以「面包屑重构版（无任何高亮配色）」发布过——回访用户命中旧 v15 缓存则 token 全无色。已升 **v17**。
+
+**修复 2——嗅探预览对等移植**（`editor.js`）：214f7e9 只改了后端 `highlight.py`，预览端 `hlCode()` 无嗅探——编辑无语言 python 围栏时预览无色、保存后阅读区有色，违反 d086b23「预览与服务端同 token」设计目标。已移植 `hlSniff()`（同规则：≥2 命中取最优）+ 补 `md/text/txt/markdown→plain` 映射（否则 text 围栏在预览端会被嗅探，反向不对等）。实测对等：无语言围栏服务端 3 kwd ≡ 预览 3 kwd（样本逐一相同）、text 围栏双侧 0 token。
+
+**版本**：CSS v17、JS 锁步 v16（含 git.js 硬编码）；resource 审计 9 模块零分裂、全程零 console error；docs/ 测试文档 finally 清理与基线一致。
