@@ -180,7 +180,7 @@ def highlight(code: str, lang_raw: str) -> str:
         # 普通文本段: 标识符里挑关键词
         if start > i:
             seg = code[i:start]
-            if lang in ("python", "js", "sh", "json", "yaml") and _KW.get(lang):
+            if lang in ("python", "js", "sh", "json", "yaml", "sql", "css", "html", "ini") and _KW.get(lang):
                 for w in re.finditer(r"\b[A-Za-z_][A-Za-z0-9_]*\b", seg):
                     if _kw_span(lang, w.group(0)):
                         s0, s1 = w.span()
