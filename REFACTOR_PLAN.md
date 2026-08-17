@@ -375,3 +375,15 @@ docs/ 测试产物（移動テスト×2+assets、Clean検証、README）全部�
 **测试脚本事故记档（第五例）**：create 传参加入杂散空格（`'改 名前テスト'`）而后续步骤用无空格名——upload 400、引用字面量 `undefined`、rename 断言全被污染；先清理残档再以逐字段核对重跑通过。教训：多步 setup 的字符串参数跨步骤复用时以变量传递，不手抄。
 
 docs/ 测试产物（改名前後×2+assets、煙霧テスト）全部清理，health 全绿（11 篇/0/0/0）。
+
+### 8.16 第十三轮（4c8d3e5→）：截图资产刷新到当前 UI（验收项 #15 持续有效）
+
+**动机**：核心 24 张双端双主题截图停在第一轮，此后顶栏迁移（4002399）、移动 brand 隐藏+crumb 94px（607b112）、gallery 死代码清理（4c8d3e5）让它们不再代表产品现状。
+
+**刷新**：24 张全量重拍（desktop 1024×640 ×12：reader/editor/gallery/lightbox/menu/search × light/dark；mobile 390×844 ×12：reader/drawer/outline/editor/lightbox/search × light/dark），同名覆盖。
+
+**校验**：尺寸断言全过；像素级抽查——light vs dark reader 差 217.9（主题确生效）、menu 与 reader 全屏差 0.9 但菜单裁剪区差 5.5（小浮层全屏均值稀释，菜单确可见）、dark-lightbox 652k/655k 非黑像素（1×1 测试图放大均匀属正常，非黑屏）；24 张零低方差空白图。
+
+**清理**：`hl-dark.png`/`hl-ghl.png`——8ccd566 revert 高亮时漏删的孤儿截图（被删功能的残留物），随本轮删除。
+
+本轮零代码变更（无版本号动作）。docs/ 未触碰，health 全绿。
