@@ -425,3 +425,17 @@ docs/ 测试产物（改名前後×2+assets、煙霧テスト）全部清理，h
 **测量陷阱记档（第七例）**：30s evaluate 上限 vs 20s 轮询——冲突类异步等待测试必须单路径单次 ≤25s 分段；超时截断不等于失败，先探现场态（本例 ta 值即路径1通过的铁证）再决定重跑范围。
 
 本轮零代码变更。docs/ 零残留（衝突テスト×2 已清），health 五项全零。
+
+### 8.19 第十六轮（c34fe1c→）：搜索索引新鲜度双向实证（服务端+客户端）
+
+**动机**：索引新鲜度从未端到端验证过——若 `/api/search-index` 是静态预构建文件（`build_search_index.py` 的存在暗示此风险），客户端 invalidate+reload 会拿陈旧数据。
+
+**服务端机制确认（代码+curl 实证）**：`_get_index()` 内存缓存 3s TTL + 五处变更端点（save/rename/delete/image-delete/clean）调 `_refresh()` 清 ts 即时重建——非静态文件。curl 实证：API 建文档（含独特记号 9471）→ 索引立刻含它；删除 → 立刻消失。`build_search_index.py` 是 v1 时代遗留工具（产出 assets/search-index.js 供旧前端），与现行 API 无关。
+
+**客户端 invalidate 链（UI 全流程实证）**：编辑器写入（含 5583）→⌘S 落盘 → **同会话** ⌘K 搜「5583」→ 1 doc/1 line/1 `<mark>` 命中 ✅ → 树 ⋯→削除（自绘 confirm）→ 磁盘 404 → 再搜 → 0 doc + 空态文案 ✅。索引增删双向即时。
+
+**边界记档（设计内，非 bug）**：`search.invalidate()` 只挂在本 tab 的 UI 变更流上——**其它客户端/裸 API 的变更不通知本 tab**（无 websocket 的零依赖架构必然）。多 tab 间索引最长陈旧至刷新；单用户知识库可接受。
+
+**测试事故记档（第八例）**：①裸 API 建文档后直接搜为空——初判「索引陈旧」错误，实为绕过 UI 未触发 invalidate（服务端 curl 即证新鲜）；②newDocFlow 对话框时序——450ms 等待不足致 `inp` null 崩脚本，且重跑触发 a984820 的 409 exists（首跑实际已建成功）——多步 UI 流每步等待 ≥600ms 且失败后先查磁盘再归因。
+
+本轮零代码变更。docs/ 零残留，health 五项全零。
