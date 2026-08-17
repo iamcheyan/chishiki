@@ -449,3 +449,13 @@ docs/ 测试产物（改名前後×2+assets、煙霧テスト）全部清理，h
 **沙箱下全功能冒烟（CDP+curl）**：建文档 ✅ 树/索引（12 entries）/git status（dirty 正确反映未提交）✅ 图片上传落 `箱テスト_assets/` ✅ 树 11 文件+阅读 ✅ 删除+空目录回收 ✅ health 归零 ✅ journal 零错误 ✅——git 子进程（/tmp 无关、`.git` 在读写白名单内）与全部写路径不受沙箱影响。
 
 本轮变更仅 unit 文件（服务配置，非 web 资源），无版本号动作。
+
+### 8.21 第十八轮（7271950→）：代码卫生终审（静态面最后一环）
+
+**审计矩阵**：①TODO/FIXME/XXX/HACK 全库零残留 ✅；②console.log 零残留（§8.13 已 grep 门过，本轮含 index.html 复核）✅；③未使用导出——启发式扫描 13 候选逐个 grep 终判，全部有真实引用（内部调用 `renderPreview`/`toggleShortcutHelp`、动态导入 `m.renameFlow`/`m.expandTo`/`m.currentDocPath`、监听器 `backToRead`）——**零死代码**；④体量健康：9 模块 126 函数最大 editor.js 635L/25KB，符合零构建 vanilla 的可维护区间 ✅。
+
+**记档不修**：`renderPreview`/`tokenize` 等仅内部使用的 `export` 关键字——删除是零收益 churn 且有破坏动态导入契约的风险，保持现状。
+
+**审计方法论记档（第九例）**：未使用导出扫描的两层陷阱——命名空间调用（`tree.setCurrent`）与动态导入别名（`m.renameFlow`）都会让朴素 grep 漏判；须先建「模块→别名」映射再查 `alias.fn` 模式，最后逐候选人工终判。
+
+本轮零代码变更。health 五项全零，服务 active，工作区干净。
