@@ -214,8 +214,8 @@ kbd{
   font-family:var(--font-sans); font-size:12.5px; color:var(--muted-2);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
 }
+#crumb{ min-width:0; flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .topbar-right{ margin-left:0; display:flex; align-items:center; gap:6px; flex:none; }
-#crumb{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .icon-btn{
   display:inline-flex; align-items:center; justify-content:center;
   width:32px; height:32px; border-radius:var(--radius-s); color:var(--muted-2);
@@ -827,7 +827,7 @@ pre:hover .pre-copy, .pre-copy:focus-visible{ opacity:1; }
 .md-body .task-box[aria-checked="true"] + .task-txt{ color:var(--muted); }
 
 /* ===== 顶栏 検索/新規 ===== */
-.topbar-actions{ display:flex; align-items:center; gap:8px; margin-left:18px; }
+.topbar-actions{ display:flex; align-items:center; gap:8px; margin-left:12px; flex:none; }
 .top-search{
   display:inline-flex; align-items:center; gap:7px;
   height:30px; padding:0 10px 0 11px;
@@ -853,7 +853,7 @@ pre:hover .pre-copy, .pre-copy:focus-visible{ opacity:1; }
 
 /* 移动端: 图标化, 标签/kbd 隐藏; 面包屑截断 */
 @media (max-width:767px){
-  .topbar-actions{ gap:4px; margin-left:auto; flex:none; }
+  .topbar-actions{ gap:4px; margin-left:0; flex:none; }
   .top-search{ width:32px; height:32px; padding:0; justify-content:center; border-radius:var(--radius-s); border:none; }
   .top-search .ts-label,.top-search .ts-kbd{ display:none; }
   .top-newdoc{ width:32px; height:32px; padding:0; justify-content:center; border-radius:var(--radius-s); }
