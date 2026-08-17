@@ -469,3 +469,17 @@ docs/ 测试产物（改名前後×2+assets、煙霧テスト）全部清理，h
 **测试陷阱记档（第十例）**：`.hl-list` 类复用于「未提交清单」与「历史列表」两种语义——按类名选择器计数会把 log 行误判为 dirty 项（本例 dirtyListed:1 实为 1 条历史）。断言前先读面板文案根节点。
 
 **项目终态声明**：至此全部可验证面闭环——功能（任务书1-7）、验收（24条）、数据（索引/health）、安全（a984820+沙箱）、代码（零死代码）、部署（unit/沙箱/日志）、资产（截图）、git 面板数据流。无已知欠账。
+
+### 8.23 第二十轮（68b4fe5→）：终态发布门禁（首访视角单会话全绿）
+
+**linger 复核**：`loginctl show-user tetsuya -p Linger = yes`——boot 持久性在位，SSH 会话全断服务存活，无部署缺口。
+
+**门禁矩阵**（新会话 `?_final`，桌面 1280 + 移动 390 两标签页，零 console error 零 4xx）：
+- 版本：9 个 JS 资源单一版本零分裂（splits=0, uniform=true）✅
+- 树：11 文件 + 5 目录 ✅；阅读：読書メモ 标题/图片 naturalWidth>0/表格 1 ✅
+- 搜索：`手順` 4 个 mark ✅；git API ok ✅；health：11 docs + 五项 issue 合计 0 ✅
+- 移动 390：首页/文档/抽屉开三态 scrollWidth=390 零溢出，crumb 90px 可见 ✅；抽屉即 `#sidebar.open`（320px 含全部 11 文件）✅
+
+**测试陷阱记档（第十一例）**：移动端 UI 元素命名臆测两连错（`btn-tree`→实为 `btn-menu`；`#drawer/.drawer`→实为 `#sidebar.open`）——零依赖前端的语义类名无外部契约，先 `querySelectorAll('button').map(id)` 枚举再操作；同理 `page.setViewport` 在 run 作用域不可用，须开固定 viewport 的新标签页替代。
+
+至此第二十轮，项目连续五轮无新发现（§8.19–8.23 均为实证收口而非修复）——审计空间真正收敛。终态：68b4fe5→本轮，health 全零，版本 v19/v19 单例。
