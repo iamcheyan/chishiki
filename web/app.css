@@ -867,36 +867,3 @@ pre:hover .pre-copy, .pre-copy:focus-visible{ opacity:1; }
   #topbar .save-state{ min-width:8px; }
 }
 
-/* ===== 代码高亮 token ===== */
-/* 纸墨(默认): 低饱和墨系 */
-.tk-com{ color:#8D867C; font-style:italic; }
-html[data-theme="dark"] .tk-com{ color:#7A756D; }
-.tk-str{ color:#8C5A3C; }               /* 赭石 */
-html[data-theme="dark"] .tk-str{ color:#D4A97A; }
-.tk-kwd{ color:#3E5C8F; font-weight:600; }   /* 靛青 */
-html[data-theme="dark"] .tk-kwd{ color:#8FB0E8; }
-.tk-num{ color:#7A4E8C; }               /* 紫 */
-html[data-theme="dark"] .tk-num{ color:#C9A0DC; }
-.tk-key{ color:#3F6E4E; }               /* 松绿 */
-html[data-theme="dark"] .tk-key{ color:#9CC9AB; }
-.tk-sec{ color:#3E5C8F; font-weight:600; }
-html[data-theme="dark"] .tk-sec{ color:#8FB0E8; }
-.tk-dec{ color:#8C5A3C; font-style:italic; }
-html[data-theme="dark"] .tk-dec{ color:#D4A97A; }
-
-/* GitHub 主题: 官方 highlight 配色 */
-html[data-theme="github-light"] .tk-com{ color:#59636e; }
-html[data-theme="github-light"] .tk-str{ color:#0a3069; }
-html[data-theme="github-light"] .tk-kwd{ color:#cf222e; }
-html[data-theme="github-light"] .tk-num{ color:#0550ae; }
-html[data-theme="github-light"] .tk-key{ color:#0550ae; }
-html[data-theme="github-light"] .tk-sec{ color:#8250df; }
-html[data-theme="github-light"] .tk-dec{ color:#8250df; }
-
-html[data-theme="github-dark"] .tk-com{ color:#9198a1; }
-html[data-theme="github-dark"] .tk-str{ color:#91cbcb; }
-html[data-theme="github-dark"] .tk-kwd{ color:#ff7b72; }
-html[data-theme="github-dark"] .tk-num{ color:#79c0ff; }
-html[data-theme="github-dark"] .tk-key{ color:#79c0ff; }
-html[data-theme="github-dark"] .tk-sec{ color:#d2a8ff; }
-html[data-theme="github-dark"] .tk-dec{ color:#d2a8ff; }

@@ -112,12 +112,7 @@ def render(md: str, doc_path: str = "") -> str:
                 i += 1
             i += 1  # skip closing fence
             cls = f' class="lang-{esc_attr(lang)}"' if lang else ""
-            try:
-                from highlight import highlight as _hl
-                body = _hl(chr(10).join(code_lines), lang)
-            except Exception:
-                body = esc_text(chr(10).join(code_lines))
-            out.append(f"<pre{cls}><code>{body}</code></pre>")
+            out.append(f"<pre{cls}><code>{esc_text(chr(10).join(code_lines))}</code></pre>")
             continue
 
         # --- Docsify 提示容器 !> (important) --> blockquote.warning 降级
