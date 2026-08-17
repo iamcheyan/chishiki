@@ -57,6 +57,44 @@ function inlinePlain(s) {
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[*_~]+/g, '').trim();
 }
 
+
+/* 轻量语法高亮(与后端 highlight.py 同 token class) */
+const HL_KW = {
+  python: /^(def|class|return|if|elif|else|for|while|try|except|finally|with|as|import|from|pass|break|continue|lambda|yield|global|assert|raise|del|in|is|not|and|or|None|True|False|async|await|self)$/,
+  js: /^(function|return|if|else|for|while|do|switch|case|default|break|continue|new|delete|typeof|instanceof|var|let|const|class|extends|super|this|import|from|export|try|catch|finally|throw|yield|async|await|static|null|undefined|true|false|void)$/,
+  sh: /^(if|then|else|elif|fi|for|while|do|done|case|esac|function|in|return|break|continue|local|export|source|set|echo)$/,
+  json: /^(true|false|null)$/,
+};
+const HL_MAP = { py: 'python', python: 'python', js: 'js', javascript: 'js', ts: 'js', typescript: 'js', bash: 'sh', sh: 'sh', shell: 'sh', json: 'json' };
+function hlCode(code, langRaw) {
+  const lang = HL_MAP[(langRaw || '').toLowerCase()];
+  if (!lang) return escText(code);
+  const esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  let out = esc(code);
+  const wrap = (re, cls) => { out = out.replace(re, m => '\u0001' + cls + '\u0002' + m + '\u0003'); };
+  const strRe = {
+    python: /("""[\s\S]*?"""|'''[\s\S]*?'''|"[^"\n]*"|'[^'\n]*')/g,
+    js: /(`[^`]*`|"[^"\n]*"|'[^'\n]*')/g,
+    sh: /("[^"\n]*"|'[^'\n]*')/g,
+    json: /("[^"\n]*")/g,
+  }[lang];
+  const comRe = {
+    python: /#[^\n]*/gm, js: /\/\/[^\n]*|\/\*[\s\S]*?\*\//gm,
+    sh: /#[^\n]*/gm, json: null,
+  }[lang];
+  wrap(strRe, 'tk-str');
+  if (comRe) {
+    out = out.replace(comRe, m => m.includes('\u0001') ? m : '\u0001tk-com\u0002' + m + '\u0003');
+  }
+  if (HL_KW[lang]) {
+    out = out.replace(/\b[A-Za-z_][A-Za-z0-9_]*\b/g, w =>
+      HL_KW[lang].test(w) ? '\u0001tk-kwd\u0002' + w + '\u0003' : w);
+  }
+  out = out.replace(/\b\d+(?:\.\d+)?\b/g, m => m.includes('\u0001') ? m : '\u0001tk-num\u0002' + m + '\u0003');
+  out = out.replace(/\u0001([\w-]+)\u0002([\s\S]*?)\u0003/g, '<span class="$1">$2</span>');
+  return out;
+}
+
 export function renderPreview(md, docPath) {
   const lines = md.split('\n');
   const out = [];
@@ -75,7 +113,7 @@ export function renderPreview(md, docPath) {
       i++;
       while (i < n && !lines[i].match(new RegExp('^\\s*' + fence))) { buf.push(lines[i]); i++; }
       i++;
-      out.push(`<pre><code>${escText(buf.join('\n'))}</code></pre>`);
+      out.push(`<pre><code>${hlCode(buf.join('\n'), m[2] || '')}</code></pre>`);
       continue;
     }
     if (/^\s*!>\s*/.test(line)) {
