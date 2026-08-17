@@ -308,3 +308,13 @@ chishiki/
 **修复 2——嗅探预览对等移植**（`editor.js`）：214f7e9 只改了后端 `highlight.py`，预览端 `hlCode()` 无嗅探——编辑无语言 python 围栏时预览无色、保存后阅读区有色，违反 d086b23「预览与服务端同 token」设计目标。已移植 `hlSniff()`（同规则：≥2 命中取最优）+ 补 `md/text/txt/markdown→plain` 映射（否则 text 围栏在预览端会被嗅探，反向不对等）。实测对等：无语言围栏服务端 3 kwd ≡ 预览 3 kwd（样本逐一相同）、text 围栏双侧 0 token。
 
 **版本**：CSS v17、JS 锁步 v16（含 git.js 硬编码）；resource 审计 9 模块零分裂、全程零 console error；docs/ 测试文档 finally 清理与基线一致。
+
+### 8.12 第九轮（8ccd566→）：高亮 revert 验证 + 版本再升
+
+**背景**：用户经 003586b（SQL/CSS/HTML/INI 中段关键词白名单补漏）后拍板整体移除高亮（8ccd566）：`highlight.py` 删除、mdrender/预览回纯文本渲染、token 配色 CSS 删除、复制按钮保留。
+
+**验证矩阵**：代码面零残留（tk-/highlight/hlCode/hlSniff 全库 0 命中、bin/ 无 highlight.py）；渲染直测——围栏代码纯文本（0 token）、无语言围栏 `<b>` 转义零活标签、代码内容完整；CDP——阅读区 0 token+复制按钮实测「✓ コピー済み」、预览 0 token、⌘E 仍通、9 模块 v17 零分裂零 console error。预览无复制按钮系 viewer.js 阅读区专属特性（editor.js 全历史 0 命中），非 revert 回归。
+
+**修复——版本随内容回退（第五例同型事故）**：8ccd566 把 CSS 标签 v17→v16、JS 停在 v16——v16 曾以「高亮版内容」发布（b1b0d64/9018d56），旧缓存持有者的 editor.js 仍带 hlCode 生成无色 span（视觉无差但版本语义污染）。已升 **CSS v18 / JS v17**（含 git.js 硬编码），全库 v16 零残留。
+
+**版本号谱系教训定案**：v11-v18 全谱中 v13/v14/v15/v16 四个号都被「二次发布不同内容」污染过。规则收敛为：**版本号是单调递增计数器，永不回退、永不复用——revert 内容也不回退版本号**。
