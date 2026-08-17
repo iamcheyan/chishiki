@@ -1,7 +1,6 @@
 /* tree.js — 侧栏文档树: 展开/折叠记忆, 当前下划线, hover 操作, 最近+收藏 */
 const VSN = (import.meta.url.match(/\?v=\d+/) || [''])[0];
-import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime } from './ui.js?v=13';
-import { invalidate as invalidateSearch } from './search.js?v=13';
+import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, copyText } from './ui.js?v=14';
 
 const LS_EXPANDED = 'chishiki:expanded';
 const LS_RECENT = 'chishiki:recent';
@@ -163,10 +162,16 @@ function fileMenu(anchor, n) {
     { label: '名前変更', value: 'rename', icon: 'pencil' },
     { label: '移動', value: 'move', icon: 'move' },
     { label: starred ? 'お気に入り解除' : 'お気に入り', value: 'star', icon: 'star' },
+    { label: 'リンクをコピー', value: 'copylink', icon: 'link' },
     '-',
     { label: '削除', value: 'del', icon: 'trash', danger: true },
   ]).then(v => {
     if (!v) return;
+    if (v === 'copylink') {
+      copyText(location.origin + '/#/doc/' + encodeURIComponent(n.path)).then(ok =>
+        toast(ok ? 'リンクをコピーしました' : 'コピーに失敗しました', ok ? '' : 'err'));
+      return;
+    }
     import('./editor.js' + VSN).then(m => {
       if (v === 'rename') m.renameFlow(n);
       else if (v === 'move') m.moveFlow(n);

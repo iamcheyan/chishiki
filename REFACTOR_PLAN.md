@@ -255,3 +255,23 @@ chishiki/
 **根因备忘（版本三重错位）**：曾同时存在 `ui.js?v=11`(标签)/`?v=9`(静态导入)/裸 `./ui.js`(git.js 导入) 三 URL → 三实例分裂；且用户改 app.js 内容未升标签 → 浏览器启发式缓存吐出旧 `app.js?v=11`（仍带 v9 导入）→ editor 旧副本无 overwrite:true → 保存 409。统一升 v12 后实测 9 模块单实例。**VSN 铁律不变：改内容必升版本，且标签/静态导入/动态导入（git.js 硬编码 `./app.js?v=N`）三者必须同版。**
 
 本轮回归：`py_compile`+`node --check` 全过；CDP 全流程（阅读/XSS 文档渲染/git 面板全局+按文档/恢复成功+失败路径/checkbox/菜单/编辑器保存）除刻意触发的 409/500 探针外零 console error；docs/ 与基线一致。**遗留**：用户在飞 topbar 検索/新規按钮迁移（web/index.html+app.js WIP，未动未提交）。
+
+### 8.9 第六轮（ea0ef28→）：顶栏收口验证 + 面包屑截断重构 + 复制链接全端可达
+
+**背景**：用户连发 4002399（検索/新規移入顶栏）与 ea0ef28（topbar-right 回贴右缘，crumb 改 `flex:1` 吸收弹性空隙）。本轮验证其收口并处理两个发现。
+
+**验证（ea0ef28，几何实测）**：桌面 1280 右组右距 20px=topbar padding（贴缘✓）、深层文档不漂移、零重叠零越界；移动 390 右组右缘 383px（与提交信息一致）、零横向溢出。
+
+**发现 1——CSS 变更未升版本**：ea0ef28 改 `app.css` 内容但标签仍 `?v=13`（浏览器启发式缓存会向已访问用户吐出漂移版顶栏，同 `app.js?v=11` 事故）。已补升 v15（本轮 CSS 改动合并入 v15）。
+
+**发现 2——移动端面包屑被挤到 0 宽**：4002399 后移动端顶栏空间盘点（390-20padding）：menu 18+brand 81+sep+actions 68+right 166+gaps 40≈375 > 370——#crumb 实测 0px，目录/标题/复制按钮全部不可见不可达（`.crumb-copy` 长期处于被裁剪的死 UI 状态，非本轮引入）。
+
+**修复 A——面包屑截断重构**（`app.js` renderCrumb + `app.css`）：`#crumb` 改 flex 行，文字段（目录链+标题）包进 `.crumb-txt` 承接 ellipsis，`.crumb-copy` 移出截断流挂在外层（`flex:none`）——桌面长标题不再裁掉 copy；纯文本视图（edit/git/health/gallery/home）统一走新增 `setCrumb()` 套 `.crumb-txt`（flex 容器内匿名文本无 ellipsis，不处理会是隐性回归）。移动端 `.crumb-copy` 显式 `display:none`（0 宽 crumb 内无意义，清死 UI）。
+
+**修复 B——复制链接全端可达**（`tree.js` fileMenu）：文件 ⋯ 菜单新增「リンクをコピー」（link 图标，复用 `ui.copyText()`，位于收藏与删除之间）——移动端经侧栏抽屉 ⋯ 菜单可达，全断点统一入口。
+
+**版本**：JS 全量 v14 锁步（含 git.js 硬编码 `./app.js?v=14`）、CSS v15；resource 审计 9 模块零分裂。
+
+**E2E（CDP）**：桌面深层文档 crumb 2 目录+copy 可见且 `elementFromPoint` 真实命中、copy→toast、目录点击 expandTo 树完整（11 文件）；移动 390 crumb-copy 隐藏、抽屉→⋯ 菜单 5 项含新复制项→点击 toast；五视图（doc/edit/git/health/gallery/home-redirect）crumb 文案逐一正确；全程零 console error。
+
+**遗留**：用户在飞 `bin/highlight.py`（代码高亮 WIP，未动）；移动端面包屑文字仍 0 宽（顶栏超编，属用户设计决策——如需展示需缩 brand 或移按钮，未擅动）。

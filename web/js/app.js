@@ -1,13 +1,13 @@
 /* app.js — 引导 + hash 路由 + 主题 + 快捷键 + 抽屉/大纲/返回顶部 */
 const VSN = (import.meta.url.match(/\?v=\d+/) || [''])[0];
-import { $, $$, menu } from './ui.js?v=13';
-import * as tree from './tree.js?v=13';
-import * as viewer from './viewer.js?v=13';
-import * as editor from './editor.js?v=13';
-import * as search from './search.js?v=13';
-import * as gallery from './gallery.js?v=13';
-import * as health from './health.js?v=13';
-import * as gitpanel from './git.js?v=13';
+import { $, $$, menu } from './ui.js?v=14';
+import * as tree from './tree.js?v=14';
+import * as viewer from './viewer.js?v=14';
+import * as editor from './editor.js?v=14';
+import * as search from './search.js?v=14';
+import * as gallery from './gallery.js?v=14';
+import * as health from './health.js?v=14';
+import * as gitpanel from './git.js?v=14';
 
 /* ---------- 主题 ---------- */
 function applyTheme(t) {
@@ -79,7 +79,7 @@ async function route() {
   } else if (kind === 'edit' && rest) {
     const path = decodeURIComponent(rest);
     showView('view-editor');
-    $('#crumb').textContent = path + ' — 編集';
+    setCrumb(path + ' — 編集');
     tree.setCurrent(path);
     try {
       await editor.openEditor(path);
@@ -89,25 +89,25 @@ async function route() {
     }
   } else if (kind === 'git') {
     showView('view-git');
-    $('#crumb').textContent = 'バージョン';
+    setCrumb('バージョン');
     tree.setCurrent(null);
     await gitpanel.showGit();
   } else if (kind === 'health') {
     showView('view-health');
-    $('#crumb').textContent = 'ヘルスチェック';
+    setCrumb('ヘルスチェック');
     tree.setCurrent(null);
     await health.showHealth();
   } else if (kind === 'gallery') {
     const dir = rest ? decodeURIComponent(rest) : '';
     showView('view-gallery');
-    $('#crumb').textContent = dir ? dir + ' — ギャラリー' : 'ギャラリー';
+    setCrumb(dir ? dir + ' — ギャラリー' : 'ギャラリー');
     tree.setCurrent(null);
     await gallery.showGallery(dir);
   } else {
     showView('view-home');
     viewer.state.currentPath = null;
     tree.setCurrent(null);
-    $('#crumb').textContent = '';
+    setCrumb('');
     // 有文档时首页默认打开第一篇
     const first = firstDoc(tree.treeState.data);
     if (first) { location.hash = '#/doc/' + encodeURIComponent(first); return; }
@@ -266,15 +266,28 @@ async function boot() {
 boot();
 
 
-/* ---------- 面包屑: 目录可点 + 复制链接 ---------- */
+/* setCrumb: 纯文本视图的面包屑(套 .crumb-txt 以保留 ellipsis) */
+function setCrumb(text) {
+  const el = document.getElementById('crumb');
+  el.textContent = '';
+  if (!text) return;
+  const s = document.createElement('span');
+  s.className = 'crumb-txt';
+  s.textContent = text;
+  el.appendChild(s);
+}
 function renderCrumb(path) {
   const el = document.getElementById('crumb');
   el.textContent = '';
+  // 文字段: 承接截断(ellipsis 只作用于这里, copy 按钮不被裁掉)
+  const txt = document.createElement('span');
+  txt.className = 'crumb-txt';
+  el.appendChild(txt);
   const parts = path.split('/');
   parts.forEach((seg, i) => {
-    if (i) el.appendChild(document.createTextNode(' / '));
+    if (i) txt.appendChild(document.createTextNode(' / '));
     if (i === parts.length - 1) {
-      el.appendChild(document.createTextNode(seg));
+      txt.appendChild(document.createTextNode(seg));
       const cp = document.createElement('button');
       cp.type = 'button';
       cp.className = 'crumb-copy';
@@ -300,7 +313,7 @@ function renderCrumb(path) {
         // 展开并滚到该目录
         import('./tree.js' + VSN).then(m => m.expandTo && m.expandTo(parts.slice(0, i + 1).join('/')));
       });
-      el.appendChild(b);
+      txt.appendChild(b);
     }
   });
 }

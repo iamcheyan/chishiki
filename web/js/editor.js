@@ -1,7 +1,7 @@
 /* editor.js — 编辑器: textarea+分屏预览 / 工具栏 / 贴图上传 / 草稿 / 保存 / 冲突检测 / 文档操作 */
-import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, fileUrl } from './ui.js?v=13';
-import * as tree from './tree.js?v=13';
-import * as search from './search.js?v=13';
+import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, fileUrl } from './ui.js?v=14';
+import * as tree from './tree.js?v=14';
+import * as search from './search.js?v=14';
 
 const DRAFT_PREFIX = 'chishiki:draft:';
 

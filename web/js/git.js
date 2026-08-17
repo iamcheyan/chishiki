@@ -1,5 +1,5 @@
 /* git.js — 版本面板: 未提交/文档历史/恢复旧版/提交 */
-import { $, api, esc, toast, showdialog } from './ui.js?v=13';
+import { $, api, esc, toast, showdialog } from './ui.js?v=14';
 
 export async function showGit() {
   const view = $('#view-git');
@@ -55,7 +55,7 @@ export function initGit() {
   const btn = document.getElementById('btn-git');
   btn?.addEventListener('click', () => {
     // 当前打开的文档 → 查它的历史; 否则全局
-    import('./app.js?v=13').then(m => {
+    import('./app.js?v=14').then(m => {
       window.__gitDocPath = m.currentDocPath ? m.currentDocPath() : null;
       location.hash = '#/git';
     });
