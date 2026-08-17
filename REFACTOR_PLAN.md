@@ -118,3 +118,62 @@ chishiki/
 1. 82 机部署吗？是则占端口 **8850**（工具舰队顺延），默认回落链保留。
 2. `docs/` 内容要不要进 git（原版 --commit 会提交内容）？默认：工具仓不含内容，内容目录 `--docs-dir` 指向，`.gitignore docs/`。
 3. 编辑器字体字号有无个人偏好（默认 15px/1.9 行高衬线）。
+
+## 8. v2 前端交付记录（2026-08-17）
+
+### 8.1 功能对照表
+
+| 模块 | 实现 | 文件 |
+|---|---|---|
+| 三栏布局 | 侧栏280px / 阅读列720px居中 / 右大纲220px(滚动spy+平滑滚动)；移动<768抽屉+单列+全屏编辑/搜索 | `web/app.css` `web/index.html` |
+| 设计体系 | 纸墨双主题token(`html[data-theme]`+prefers-color-scheme默认+localStorage)、明朝体正文/sans控件、圆角≤8、图标全内联SVG stroke1.5、激活态=下划线 | `web/app.css` |
+| 侧栏树 | 目录/文件图标、展开折叠记忆(localStorage)、当前下划线、hover操作(改名/移动/删除/收藏)、目录hover(新建/图库/新文件夹)、最近5篇+收藏 | `web/js/tree.js` |
+| 阅读 | `/api/doc?rendered=1`直出、图片src重写`/files/`、表格横滚包裹、代码块横滚、外链新窗、Docsify `!>`/`?>` callout样式 | `web/js/viewer.js` |
+| Lightbox | 滚轮/双指缩放1x-8x、拖拽平移、双击复位、←→/轻扫切换、Esc关、图库态带删除 | `web/js/viewer.js` |
+| 编辑器 | textarea+分屏(同步滚动近似)/单编辑/单预览、工具栏作用于选区、Ctrl/Cmd+S、脏标记圆点、5s草稿+恢复横幅、外部mtime变更检测(20s轮询+再读/保留)、状态栏字数行数mtime | `web/js/editor.js` |
+| 贴图 | paste/drag-drop `image/*`→`POST /api/image`→光标插`![アップロード中…]`占位→完成替换；预览即时重写src | `web/js/editor.js` |
+| 搜索 | ⌘K居中面板(移动全屏)、search-index纯前端查询、CJK 2-gram+拉丁分词、AND、标题×5/章节×3/正文×1、`<mark>`摘录、↑↓+Enter锚点跳转、120ms防抖 | `web/js/search.js` |
+| 图库 | 目录全部`_assets`/`assets`瀑布网格、hover复制md引用/删除(confirm)、顶部统计N张/总大小 | `web/js/gallery.js` |
+| 自绘控件 | 对话框(Esc/Enter/遮罩)、ypop下拉(<480px底部sheet)、toast 2.5s、焦点outline 2px accent、键盘全程可用 | `web/js/ui.js` |
+| 快捷键 | ⌘K搜索 / ⌘S保存 / ⌘N新建 / Esc层层退出 | `web/js/app.js` |
+
+### 8.2 验收结果（24条全过）
+
+| # | 项 | 结果 | 证据 |
+|---|---|---|---|
+| 1 | 树完整+展开记忆 | ✅ | CDP: 四目录显示；折叠工作手册→刷新后仍折叠、技术笔记/嵌套システム運用仍展开 |
+| 2 | 大纲spy+跳转 | ✅ | CDP: h2/h3列出；点击「トラブル時」滚动到位且立即高亮(cur=2)；修复spy判定线90→160px |
+| 3 | Docsify容器/表格/任务列表/代码块 | ✅ | `!>`→`blockquote.callout-warn`(注記label)；表格.table-wrap横滚；3任务项；正規表現チートシート`<pre><code>`渲染 |
+| 4 | Lightbox缩放/复位/Esc | ✅ | 滚轮×8→scale(3.059)；双击→scale(1)；Esc关；1x1测试图 |
+| 5 | ⌘K日文搜索 | ✅ | 「手順」→3文档命中、章节「復旧手順」、`<mark>`高亮、点击摘录行→`?h=復旧手順`滚动到该节 |
+| 6 | 新建→编辑→保存→重开 | ✅ | 「验收草稿テスト」出现在树上；编辑h2/粗体/表格/callout保存；重开内容在 |
+| 7 | 粘贴截图 | ✅ | 合成ClipboardEvent→`![image](验收草稿テスト_assets/2026-08-17-11-11-38.png)`、占位先现、预览src已重写`/files/` |
+| 8 | 改名带_assets不断图 | ✅ | 改名「验收改名テスト」→hash/树更新，图片src不变naturalWidth=1(加载成功) |
+| 9 | 删除自绘confirm | ✅ | 「削除テスト」→自绘对话框→确认→树消失 |
+| 10 | 图库 | ✅ | 个人备忘2张网格+统计「2枚・144B」；复制引用按钮；Lightbox删除confirm（见8.3后端缺口） |
+| 11 | 草稿恢复 | ✅ | 输入不保存→5s写localStorage→刷新→「下書きが残っています」横幅→復元→内容还原 |
+| 12 | 双主题 | ✅ | 深色`#141414`/浮层`#1B1A18`实测；Lightbox/搜索/对话框双主题截图各6+6 |
+| 13 | 390×844 | ✅ | 抽屉(遮罩+滑动)/全屏搜索(borderRadius 0)/全屏编辑器(position:fixed 390px)/无横向滚动/安全区padding |
+| 14 | 1280/1920三栏 | ✅ | 1280:`280px 780px 220px`；1920:view 800px(内容720)居中(offset 0)；大纲可见 |
+| 15 | 双主题截图 | ✅ | `screenshots/` 24张(desktop/mobile × light/dark × reader/search/editor/gallery/lightbox/menu/drawer/outline) |
+| 16 | console零error | ✅ | CDP全流程走查(树/阅读/大纲/搜索/编辑保存/图库/主题/移动端) pageerror+console.error均0 |
+| 17 | 原生控件禁令 | ✅ | `grep -rE "\b(alert\|confirm\|prompt)\s*\("` web/ 零命中(exit 1) |
+| 18 | node --check | ✅ | 7个js全过；console.log零残留（无任何命中） |
+| 19 | 性能 | ✅ | 首屏ready 1056ms(≤1500)；search-index 3.8ms/10KB(预算300ms/1MB)；html/css各~1ms |
+| 20 | 无障碍 | ✅ | 手动清单: 焦点outline 2px、ink对比13.8/12.3:1、muted 7:1、h1语义、img全alt、按钮全label、lang=ja |
+| 21 | 图片/重写无404 | ✅ | 12文档全遍历: 2个`/files/`图片请求均200，404零 |
+| 22 | 分批中文commit | ✅ | UI壳(74208a0)/编辑器(2236013)/搜索图库(87b726d)/打磨验收+截图+本文档 |
+| 23 | 交付记录 | ✅ | 本节 |
+| 24 | systemd+meta | ✅ | `systemctl --user is-active chishiki`→active；`curl :8850/api/meta`→200 |
+
+### 8.3 后端缺口记录（bin/ 冻结未动）
+
+1. **图片删除无API**：`/api/doc/delete` 经 `_safe_md_path` 限 `.md`，图库/Lightbox 的删除无法落地。前端完整实现交互(confirm→toast)，`gallery.js` 置 `IMAGE_DELETE_API=false` 能力开关；后端补 `POST /api/image/delete {url}` 后置 `true` 即通。
+2. **改名不迁移 `_assets`**：`/api/doc/rename` 仅改md文件名，`<旧stem>_assets/` 目录留在原处。因图片路径按文档所在目录相对解析，引用不断（验收#8证实），但资源目录名与文档名脱钩；建议后端改名时同步 `rename` assets 目录。
+3. **无目录API**：新建文件夹由前端以「新目录/README.md」占位实现（`create` 的 `dir` 参数承担 mkdir -p）。
+
+### 8.4 截图索引
+
+`screenshots/`（均为 PNG，1024×640 / 390比例缩放）：
+- 桌面: desktop-{light,dark}-{reader,search,editor,gallery,lightbox,menu}.png
+- 移动: mobile-{light,dark}-{reader,drawer,outline,search,editor,lightbox}.png
