@@ -483,3 +483,13 @@ docs/ 测试产物（改名前後×2+assets、煙霧テスト）全部清理，h
 **测试陷阱记档（第十一例）**：移动端 UI 元素命名臆测两连错（`btn-tree`→实为 `btn-menu`；`#drawer/.drawer`→实为 `#sidebar.open`）——零依赖前端的语义类名无外部契约，先 `querySelectorAll('button').map(id)` 枚举再操作；同理 `page.setViewport` 在 run 作用域不可用，须开固定 viewport 的新标签页替代。
 
 至此第二十轮，项目连续五轮无新发现（§8.19–8.23 均为实证收口而非修复）——审计空间真正收敛。终态：68b4fe5→本轮，health 全零，版本 v19/v19 单例。
+
+### 8.24 第二十一轮（9167ce6→）：journal 考古——24h 错误线归零
+
+**发现**：24h journal 出现 12 条 error 线，含 2 次 `UnboundLocalError: 'd'` @ /api/clean（12:45:16，旧实例 PID 1425695）。
+
+**归因（三步闭环）**：①当前代码 `do_POST` 顶部 `d = self.docs_dir`（385 行）对所有 POST 分支生效，514 行 `_health_report(d)` 合法；②live 实证 `POST /api/clean {dry_run:true}` → `ok: True`；③时间线——12:45 崩溃两次 → 12:46:12 服务重启 → **12:46:20 起至今 24h+ 零 traceback**（覆盖其后全部 E2E/沙箱重启/发布门禁）。结论：§8.8 时代 rc 校验重构中途的陈旧运行进程（部分加载态），重启即愈，非当前缺陷。
+
+**部署健康面**：进程 RSS 23MB / CPU 0%；本地=remote（ahead 0/behind 0）；linger=yes；health 五项全零。
+
+**方法论（第十二例）**：日志审计的时间窗陷阱——「24h 有错误」≠「现存缺陷」；traceback 须对齐 PID+重启时间线，且必须 live 复现当前代码再定罪。陈旧进程的部分加载态是 Python http.server 热演进期的经典幽灵。
