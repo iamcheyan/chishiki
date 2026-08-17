@@ -179,7 +179,7 @@ export function menu(anchor, items) {
       m.appendChild(b);
     }
     function closeMenus() {
-      if (activeMenu) { activeMenu.el.remove(); document.removeEventListener('pointerdown', onDoc, true); activeMenu = null; }
+      if (activeMenu) { activeMenu.el.remove(); document.removeEventListener('pointerdown', onDoc, true); document.removeEventListener('keydown', onKey, true); activeMenu = null; }
     }
     function onDoc(e) {
       if (!m.contains(e.target) && e.target !== anchor && !anchor.contains(e.target)) {

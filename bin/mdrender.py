@@ -8,6 +8,34 @@ import re
 _RESC = None  # legacy placeholder
 
 
+_SAFE_PROTO = ("http://", "https://", "mailto:", "#", "/")
+
+
+def safe_url(u: str) -> str:
+    """链接/图片协议白名单: 拒绝 javascript:/data:/vbscript: 等"""
+    u = (u or "").strip()
+    low = u.lower().replace("\t", "").replace("\n", "").replace("\r", "").replace(" ", "")
+    if low.startswith(("javascript:", "data:", "vbscript:", "file:", "blob:")):
+        return "#"
+    if u.startswith(_SAFE_PROTO) or not re.match(r"^[a-z][a-z0-9+.-]*:", low):
+        return u
+    return "#"
+
+
+_HTML_DENY = re.compile(
+    r"<\s*/?\s*(script|iframe|object|embed|style|form|input|button|textarea|select|option|meta|link|base|svg|math)\b",
+    re.I)
+
+
+def _strip_dangerous_html(text: str) -> str:
+    """块级 raw HTML 白名单过滤: 移除可执行/可交互标签(整对连内容)"""
+    out = re.sub(
+        r"<\s*(script|iframe|object|embed|style|form|svg|math)\b[^>]*>.*?<\s*/\s*\1\s*>",
+        "", text, flags=re.I | re.S)
+    out = _HTML_DENY.sub("<", out)          # 残余开/闭标签降级为文本
+    return out
+
+
 def esc(s: str) -> str:
     return esc_text(s)
 
@@ -124,7 +152,7 @@ def render(md: str, doc_path: str = "") -> str:
                 if i < n:
                     html_lines.append(lines[i])
             i += 1
-            out.append(chr(10).join(html_lines))
+            out.append(_strip_dangerous_html(chr(10).join(html_lines)))
             continue
 
         # --- 标题
@@ -186,7 +214,7 @@ def render(md: str, doc_path: str = "") -> str:
                 out.append('<ul class="task-list">')
                 task_open = True
             checked = " checked" if m.group(1).lower() == "x" else ""
-            out.append(f'<li class="task-item"><label><input type="checkbox"{checked} disabled>{inline(m.group(2))}</label></li>')
+            out.append(f'<li class="task-item"><span class="task-box{" on" if "checked" in checked else ""}" role="checkbox" aria-checked="{"true" if "checked" in checked else "false"}" aria-disabled="true"></span><span class="task-txt">{inline(m.group(2))}</span></li>')
             i += 1
             continue
         if task_open:
@@ -268,7 +296,7 @@ def _inline_nocode(s: str) -> str:
         t = m.group(3)
         if t:
             title = f' title="{esc_attr(t)}"'
-        return stash(f'<img src="{esc_attr(src)}" alt="{alt}"{title} class="md-img" loading="lazy">')
+        return stash(f'<img src="{esc_attr(safe_url(src))}" alt="{alt}"{title} class="md-img" loading="lazy">')
 
     s = re.sub(r"!\[([^\]]*)\]\(([^)\s]+)(?:\s+\"([^\"]*)\")?\)", img_repl, s)
 
@@ -276,9 +304,9 @@ def _inline_nocode(s: str) -> str:
         txt = m.group(1)
         href = m.group(2)
         if re.match(r"^(\^|#)", href):
-            return stash(f'<a href="{esc_attr(href)}">{txt}</a>')
+            return stash(f'<a href="{esc_attr(safe_url(href))}">{txt}</a>')
         ext = ' target="_blank" rel="noopener"' if re.match(r"^[a-z]+://", href) else ""
-        return stash(f'<a href="{esc_attr(href)}"{ext}>{txt}</a>')
+        return stash(f'<a href="{esc_attr(safe_url(href))}"{ext}>{txt}</a>')
 
     s = re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", a_repl, s)
 

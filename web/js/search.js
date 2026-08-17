@@ -1,5 +1,5 @@
 /* search.js — ⌘K 搜索: CJK 2-gram + 拉丁分词, AND 匹配, 标题×5/章节×3/正文×1 */
-import { $, $$, esc, api } from './ui.js?v=9';
+import { $, $$, esc, api } from './ui.js?v=12';
 
 let index = null;
 let loadingPromise = null;

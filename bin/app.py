@@ -54,8 +54,12 @@ def _safe_md_path(docs_dir: Path, raw: str, must_exist: bool = False) -> Optiona
 
 
 def _atomic_write(path: Path, text: str) -> None:
-    tmp = path.with_name(path.name + ".tmp-" + str(os.getpid()))
-    tmp.write_text(text, encoding="utf-8")
+    import uuid
+    tmp = path.with_name(path.name + ".tmp-" + str(os.getpid()) + "-" + uuid.uuid4().hex[:8])
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write(text)
+        f.flush()
+        os.fsync(f.fileno())
     os.replace(tmp, path)
 
 
@@ -384,6 +388,9 @@ class Handler(SimpleHTTPRequestHandler):
             content = payload.get("content")
             if md is None or not isinstance(content, str):
                 return self._json(400, {"ok": False, "error": "invalid"})
+            # overwrite 保护: 显式 overwrite=true 才允许覆盖已存在文档(编辑器保存传true; 移动到同名路径会被拒)
+            if md.exists() and payload.get("overwrite") is not True:
+                return self._json(409, {"ok": False, "error": "exists"})
             try:
                 md.parent.mkdir(parents=True, exist_ok=True)
                 _atomic_write(md, content)
@@ -504,8 +511,11 @@ class Handler(SimpleHTTPRequestHandler):
             deleted = []
             if not dry:
                 for item in report["orphan_images"]:
+                    img = _safe_asset_path(d, item["path"], must_exist=True)
+                    if img is None:
+                        continue          # 删除前二次校验失败 → 跳过
                     try:
-                        (d / item["path"]).unlink()
+                        img.unlink()
                         deleted.append(item["path"])
                     except OSError:
                         pass
@@ -604,9 +614,14 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 def _safe_asset_path(root: Path, url: str, must_exist: bool = False) -> Path | None:
-    """图片删除: 校验 url(相对 docs 的资源路径, 限图片后缀, 防穿越)"""
-    url = (url or "").strip().lstrip("/")
+    """图片删除: 校验 url(相对 docs 的资源路径, 限图片后缀+必须位于 *_assets/assets 目录, 防穿越)"""
+    from urllib.parse import unquote
+    url = unquote((url or "").strip().lstrip("/"))
     if not url or ".." in url.split("/"):
+        return None
+    # 必须位于资产目录内(父目录名以 _assets 结尾或名为 assets)
+    parts = url.split("/")
+    if len(parts) < 2 or not (parts[-2].endswith("_assets") or parts[-2] == "assets"):
         return None
     p = (root / url)
     try:
@@ -622,6 +637,7 @@ def _safe_asset_path(root: Path, url: str, must_exist: bool = False) -> Path | N
 
 
 _RE_MD_LINK = re.compile(r"!\[[^\]]*\]\(([^)\s]+)")
+_RE_HTML_IMG = re.compile(r'<img\b[^>]*\bsrc=["\']([^"\']+)["\']', re.I)
 
 
 def _health_report(d: Path) -> dict:
@@ -646,17 +662,21 @@ def _health_report(d: Path) -> dict:
                 continue
             if not tp.exists():
                 broken_docs.append({"doc": rel, "target": target})
-        # 图片引用
-        for m in _RE_MD_LINK.finditer(text):
-            raw = m.group(1)
-            ip = (md.parent / raw).resolve()
-            try:
-                ip.relative_to(d.resolve())
-            except ValueError:
-                continue
-            referenced.add(ip.as_posix())
-            if not ip.exists():
-                missing_images.append({"doc": rel, "url": raw})
+        # 图片引用(Markdown 语法 + HTML <img>, URL 解码, 跳过远程/data)
+        for rex in (_RE_MD_LINK, _RE_HTML_IMG):
+            for m in rex.finditer(text):
+                raw = m.group(1)
+                if raw.startswith(("http://", "https://", "data:", "//")):
+                    continue
+                raw_dec = unquote(raw)
+                ip = (md.parent / raw_dec).resolve()
+                try:
+                    ip.relative_to(d.resolve())
+                except ValueError:
+                    continue
+                referenced.add(ip.as_posix())
+                if not ip.exists():
+                    missing_images.append({"doc": rel, "url": raw_dec})
         h1 = re.search(r"^# (.+)$", text, re.M)
         if h1:
             t = h1.group(1).strip()
@@ -664,17 +684,22 @@ def _health_report(d: Path) -> dict:
                 dup_titles.append({"title": t, "a": seen_titles[t], "b": rel})
             else:
                 seen_titles[t] = rel
-    # 孤儿图片: assets 目录下未被引用的图片
+    # 孤儿图片: 仅扫描 *_assets/assets 目录(不碰文档旁散图), 且 svg 一律不算孤儿(可执行内容不删)
     orphan_images = []
     empty_dirs = []
-    for img in d.rglob("*"):
-        if img.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp"}:
-            if img.resolve().as_posix() not in referenced:
-                stat = img.stat()
-                orphan_images.append({"path": img.relative_to(d).as_posix(), "size": stat.st_size})
-        elif img.is_dir() and img.name.endswith("_assets"):
-            if not any(img.iterdir()):
-                empty_dirs.append(img.relative_to(d).as_posix())
+    for ad in d.rglob("*"):
+        if not (ad.is_dir() and (ad.name.endswith("_assets") or ad.name == "assets")):
+            continue
+        if not any(ad.iterdir()):
+            empty_dirs.append(ad.relative_to(d).as_posix())
+            continue
+        for img in ad.iterdir():
+            if not img.is_file():
+                continue
+            if img.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}:
+                if img.resolve().as_posix() not in referenced:
+                    stat = img.stat()
+                    orphan_images.append({"path": img.relative_to(d).as_posix(), "size": stat.st_size})
     return {
         "docs": len(docs),
         "broken_doc_links": broken_docs,
@@ -714,7 +739,7 @@ def run_server(docs_dir: Path, host: str, port: int) -> None:
 def main():
     ap = argparse.ArgumentParser(description="chishiki v2 — personal knowledge base")
     ap.add_argument("--docs-dir", default=str(ROOT / "docs"))
-    ap.add_argument("--host", default="0.0.0.0")
+    ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8850)
     ap.add_argument("--normalize-assets", action="store_true", default=True)
     ap.add_argument("--no-normalize", dest="normalize_assets", action="store_false")

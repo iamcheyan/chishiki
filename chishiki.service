@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 WorkingDirectory=/home/tetsuya/development/chishiki
-ExecStart=/home/tetsuya/development/chishiki/run.sh --host 0.0.0.0 --port 8850
+ExecStart=/home/tetsuya/development/chishiki/run.sh --host 127.0.0.1 --port 8850
 Restart=on-failure
 RestartSec=3
 
