@@ -131,7 +131,16 @@ let mobileOutlineOpen = false;
 function hideMobileOutline() {
   mobileOutlineOpen = false;
   $('#outline').removeAttribute('mobile-panel');
-  $('#btn-outline').setAttribute('aria-expanded', 'false');
+  /* 字体档位切换: serif(默认明朝体)/sans(黑体) */
+$('#btn-font').textContent = 'あ';
+$('#btn-font')?.addEventListener('click', () => {
+  const cur = document.documentElement.getAttribute('data-font') || 'serif';
+  const next = cur === 'serif' ? 'sans' : 'serif';
+  document.documentElement.setAttribute('data-font', next);
+  localStorage.setItem('chishiki-font', next);
+});
+if (localStorage.getItem('chishiki-font') === 'sans') document.documentElement.setAttribute('data-font', 'sans');
+$('#btn-outline').setAttribute('aria-expanded', 'false');
 }
 $('#btn-outline').addEventListener('click', () => {
   mobileOutlineOpen = !mobileOutlineOpen;

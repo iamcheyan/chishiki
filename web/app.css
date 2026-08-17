@@ -5,6 +5,22 @@
    ============================================================ */
 
 /* ===== Tokens ===== */
+
+/* --- 滚动条: 细+主题适配(WebKit/Firefox) --- */
+*{ scrollbar-width:thin; scrollbar-color:var(--rule-strong) transparent; }
+::-webkit-scrollbar{ width:10px; height:10px; }
+::-webkit-scrollbar-track{ background:transparent; }
+::-webkit-scrollbar-thumb{ background:var(--rule-strong); border-radius:5px;
+  border:2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover{ background:var(--muted); }
+::-webkit-scrollbar-corner{ background:transparent; }
+
+/* 字体档位: html[data-font="sans"] 时阅读列切黑体(默认明朝体) */
+html[data-font="sans"] .md-body, html[data-font="sans"] .md-title{
+  font-family:var(--font-sans);
+}
+html[data-font="sans"] .md-body{ letter-spacing:.02em; }
+
 :root{
   --font-serif:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP","Noto Serif CJK JP",serif;
   --font-sans:"Hiragino Sans","Yu Gothic UI","Yu Gothic","Noto Sans JP",sans-serif;
@@ -78,7 +94,11 @@ kbd{
 #layout{
   flex:1; min-height:0;
   display:grid;
-  grid-template-columns:var(--sidebar-w) minmax(0,1fr);
+  grid-template-columns:var(--sidebar-w) minmax(0,1fr) auto;
+}
+/* 大纲栏: 有文档目录才出现; hidden 时 grid 列自动塌缩(auto), 阅读列占满 */
+#outline{
+  grid-column:3; width:210px; min-width:0;
 }
 #main{
   min-width:0; min-height:0; overflow-y:auto; overflow-x:clip;
@@ -141,12 +161,27 @@ kbd{
 .side-search span{ flex:1; text-align:left; }
 .side-new{
   display:inline-flex; align-items:center; justify-content:center; gap:6px;
-  width:34px; height:34px; border:1px solid var(--rule); border-radius:var(--radius);
+  width:34px; height:34px; flex:none; aspect-ratio:1; padding:0;
+  border:1px solid var(--rule); border-radius:var(--radius);
   font-family:var(--font-sans); font-size:13px; color:var(--muted-2);
+  box-sizing:border-box;
+}
+.tree .a-newdoc, .tree .acts button{
+  flex:none; aspect-ratio:1; box-sizing:border-box; padding:0;
 }
 .side-new:hover{ border-color:var(--rule-strong); color:var(--ink); }
 
 .side-sec{ padding:16px 0 0; }
+.side-h-row{ display:flex; align-items:baseline; justify-content:space-between; }
+.side-manage{
+  background:none; border:none; padding:0; cursor:pointer; user-select:none;
+  font-family:var(--font-sans); font-size:11px; color:var(--muted-2);
+}
+.side-manage:hover{ color:var(--accent); text-decoration:underline; text-underline-offset:3px; }
+/* 收藏管理模式: x 常显 */
+.side-list.manage li button .x{ display:inline-flex; }
+.side-list li button .x{ display:none; align-items:center; justify-content:center; }
+.side-list li button:hover .x{ display:inline-flex; }
 .side-h{
   font-family:var(--font-sans); font-size:11px; font-weight:600;
   letter-spacing:.18em; color:var(--muted);
@@ -198,9 +233,10 @@ kbd{
   text-decoration:underline; text-underline-offset:4px; text-decoration-thickness:1.5px;
 }
 .tree .acts{
-  display:none; align-items:center; gap:1px; flex:none;
+  display:inline-flex; align-items:center; gap:1px; flex:none;
+  visibility:hidden;          /* 常驻占位: hover 不改变行宽, 消除抖动 */
 }
-.tree .row:hover .acts,.tree .row:focus-within .acts{ display:inline-flex; }
+.tree .row:hover .acts,.tree .row:focus-within .acts{ visibility:visible; }
 .tree .acts button{
   width:22px; height:22px; border-radius:3px; color:var(--muted);
   display:inline-flex; align-items:center; justify-content:center;
@@ -209,6 +245,10 @@ kbd{
 .tree .acts button.danger:hover{ color:#A0522D; }
 .tree .acts button svg{ width:13px; height:13px; }
 .tree .kids{ margin-left:15px; border-left:1px solid var(--rule); padding-left:4px; }
+/* 折叠: 非 open 目录的子列表隐藏(此前缺失导致折叠按钮无效) */
+.tree .dir:not(.open) > .kids{ display:none; }
+.tree .dir:not(.open) > .row .caret svg{ transform:rotate(0deg); }
+.tree .dir.empty > .row .caret{ visibility:hidden; }   /* 空目录无箭头 */
 .tree .dir.empty > .kids::after{
   content:"（空）"; display:block; color:var(--muted); font-size:12px; padding:3px 8px;
 }

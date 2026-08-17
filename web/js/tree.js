@@ -58,7 +58,7 @@ export function render() {
   const ex = expandedSet();
   root.appendChild(buildUl(treeState.data, ex, 0));
   renderSideList($('#recent-list'), $('#recent-sec'), recent(), true);
-  renderSideList($('#fav-list'), $('#fav-sec'), stars(), false);
+  renderSideList($('#fav-list'), $('#fav-sec'), stars(), 'fav');
 }
 
 function buildUl(nodes, ex, depth) {
@@ -181,12 +181,17 @@ function renderSideList(ul, sec, paths, removable) {
     li.innerHTML = `
       <button type="button" class="${p === treeState.current ? 'cur' : ''}">
         <span class="t">${esc(node ? (node.title || node.name) : p.split('/').pop())}</span>
-        ${removable ? `<span class="x" role="button" aria-label="履歴から削除">${icon('close', 11)}</span>` : ''}
+        ${removable ? `<span class="x" role="button" aria-label="削除">${icon('close', 11)}</span>` : ''}
       </button>`;
     li.querySelector('button').addEventListener('click', e => {
       if (e.target.closest('.x')) {
-        lsSet(LS_RECENT, recent().filter(x => x !== p));
-        renderSideList(ul, sec, recent().filter(x => x !== p), true);
+        if (removable === true) {           // 最近列表: 移除记录
+          lsSet(LS_RECENT, recent().filter(x => x !== p));
+          renderSideList(ul, sec, recent().filter(x => x !== p), true);
+        } else {                            // 收藏列表: 取消收藏
+          toggleStar(p);
+          renderSide();
+        }
         return;
       }
       location.hash = '#/doc/' + encodeURIComponent(p);
@@ -194,6 +199,19 @@ function renderSideList(ul, sec, paths, removable) {
     ul.appendChild(li);
   }
 }
+
+/* ---------- 收藏管理 ---------- */
+let favManageMode = false;
+function setupFavManage() {
+  const btn = document.getElementById('fav-manage');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    favManageMode = !favManageMode;
+    btn.textContent = favManageMode ? '完了' : '管理';
+    document.getElementById('fav-list')?.classList.toggle('manage', favManageMode);
+  });
+}
+setupFavManage();
 
 /* ---------- 新建文件夹 ---------- */
 async function newDirFlow(dirPath) {
