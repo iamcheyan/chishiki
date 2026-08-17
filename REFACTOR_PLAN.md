@@ -345,3 +345,19 @@ chishiki/
 8/9/10（rename 断图/删除/图库）8.4·8.7 轮实测后相关代码路径未再变更（gallery.js 本轮仅 import 版本号变化），未重跑；12 主题四款 8.11 轮实测。14 的 1920 断点第一轮实测后布局 CSS 未动核心栅格。
 
 docs/ 测试产物（回帰テスト×2 文档+assets+draft localStorage）全部清理，与基线一致。
+
+### 8.14 第十一轮（607b112→）：根文档移动断图修复 + 欠账验证（move/clean/1920/双主题）
+
+**修复——moveFlow 根文档不改写图片引用**（`editor.js`）：原实现 `if (oldDir)` 包裹改写逻辑——从**根目录**移出的文档（oldDir=''）引用 `x_assets/…` 原样保留，移入子目录后解析全断（根文档+贴图为可达成状态：新建选「ルート」+粘贴）。normalizeDir('/x')→'x'、relFromTo('個人…','x_assets')→'../x_assets' 本就正确，纯 guard 误判。修后实测：根 `移動テスト.md`（含贴图）UI 移入 个人备忘 → 磁盘内容改写为 `../移動テスト_assets/…`、图片经 /files/ 加载 naturalWidth>0、根副本删除、toast「移動しました」。JS v18。
+
+**moveFlow 409 撞名（a984820 语义，代码审阅后本轮实测）**：根 README.md 移入 工作手册（已有同名）→ 后端 409 `exists` → toast「exists」、源文件保留、目标原文件未被动（`# ドキュメント構成` 完好）。
+
+**clean 流复测（a984820 收紧：只扫 assets+删除前二次校验）**：制造孤儿（temp doc+上传图+保存无引用内容）→ health 页列出 → dry 确认 → danger 对话框 → 实删 → toast「1 件削除しました」、磁盘 404、health 孤儿归零。
+
+**1920×1080 三栏几何**：sidebar 280px / 阅读列 720px（630-1350，考虑右侧大纲的布局居中）/ 大纲 210px@1700，零横向溢出。
+
+**双主题×表面走查**：dark body #141414+浮层 #1B1A18、light #F7F3EA+#FCFAF4（精确 token 值）；搜索卡片/删除对话框两主题均可见。
+
+**测试脚本陷阱记档（第四例）**：树行 `textContent`=标题（无 .md 后缀），全路径在 `dataset.path`——按 'xxx.md' 搜 textContent 永远落空；诊断时 `domFiles` 列表恰用 dataset.path 展示，掩盖了该差异。
+
+docs/ 测试产物（移動テスト×2+assets、Clean検証、README）全部清理，health 全绿。

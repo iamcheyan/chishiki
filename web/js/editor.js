@@ -1,7 +1,7 @@
 /* editor.js — 编辑器: textarea+分屏预览 / 工具栏 / 贴图上传 / 草稿 / 保存 / 冲突检测 / 文档操作 */
-import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, fileUrl } from './ui.js?v=17';
-import * as tree from './tree.js?v=17';
-import * as search from './search.js?v=17';
+import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, fileUrl } from './ui.js?v=18';
+import * as tree from './tree.js?v=18';
+import * as search from './search.js?v=18';
 
 const DRAFT_PREFIX = 'chishiki:draft:';
 
@@ -586,14 +586,13 @@ export async function moveFlow(node) {
     const oldDir = dirname(node.path);
     const fname = node.path.split('/').pop();
     let content = src.content;
-    if (oldDir) {
-      content = content.replace(/(!\[[^\]]*\]\()([^)\s]+)(\))/g, (m, a, src2, z) => {
-        if (/^(https?:|data:|\/)/i.test(src2)) return m;
-        const absDir = normalizeDir(oldDir + '/' + (src2.startsWith('./') ? src2.slice(2) : src2));
-        const rel = relFromTo(dest, absDir);
-        return a + rel + z;
-      });
-    }
+    content = content.replace(/(!\[[^\]]*\]\()([^)\s]+)(\))/g, (m, a, src2, z) => {
+      if (/^(https?:|data:|\/)/i.test(src2)) return m;
+      // 根文档(oldDir='')移出同样需要改写: normalizeDir('/x')→'x', relFromTo(dest,'x_assets')→'../x_assets'
+      const absDir = normalizeDir(oldDir + '/' + (src2.startsWith('./') ? src2.slice(2) : src2));
+      const rel = relFromTo(dest, absDir);
+      return a + rel + z;
+    });
     await api('/api/doc/save', { method: 'POST', json: { path: (dest ? dest + '/' : '') + fname, content } });
     await api('/api/doc/delete', { method: 'POST', json: { path: node.path } });
     toast('移動しました');

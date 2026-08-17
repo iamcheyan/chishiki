@@ -1,13 +1,13 @@
 /* app.js — 引导 + hash 路由 + 主题 + 快捷键 + 抽屉/大纲/返回顶部 */
 const VSN = (import.meta.url.match(/\?v=\d+/) || [''])[0];
-import { $, $$, menu } from './ui.js?v=17';
-import * as tree from './tree.js?v=17';
-import * as viewer from './viewer.js?v=17';
-import * as editor from './editor.js?v=17';
-import * as search from './search.js?v=17';
-import * as gallery from './gallery.js?v=17';
-import * as health from './health.js?v=17';
-import * as gitpanel from './git.js?v=17';
+import { $, $$, menu } from './ui.js?v=18';
+import * as tree from './tree.js?v=18';
+import * as viewer from './viewer.js?v=18';
+import * as editor from './editor.js?v=18';
+import * as search from './search.js?v=18';
+import * as gallery from './gallery.js?v=18';
+import * as health from './health.js?v=18';
+import * as gitpanel from './git.js?v=18';
 
 /* ---------- 主题 ---------- */
 function applyTheme(t) {
