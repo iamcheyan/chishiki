@@ -387,3 +387,25 @@ docs/ 测试产物（改名前後×2+assets、煙霧テスト）全部清理，h
 **清理**：`hl-dark.png`/`hl-ghl.png`——8ccd566 revert 高亮时漏删的孤儿截图（被删功能的残留物），随本轮删除。
 
 本轮零代码变更（无版本号动作）。docs/ 未触碰，health 全绿。
+
+### 8.17 第十四轮（ee3f2da→）：验收项 #20 Accessibility 最终态终审
+
+**动机**：第一轮手动清单后 DOM 经历顶栏迁移/crumb 重构/自绘 checkbox/菜单大量变更，#20 是唯一未在最终代码复走的验收项。
+
+**终审矩阵（CDP 计算值）**：
+
+| 检查 | 结果 |
+|---|---|
+| 图标按钮可访问名 | 顶栏/树/阅读区/pre-copy/crumb-copy 全部有 aria-label 或 title，无无名按钮 ✅ |
+| img alt | 阅读区+树 0 缺失 ✅ |
+| focus-visible | 2px solid outline 实测 ✅ |
+| 对比度（WCAG 计算） | 纸墨 treeItem 13.8:1 / ダーク 12.3:1 / GH-Light 控件 4.5:1 / GH-Dark 6.5:1——四主题全达 AA（正文 14:1 第一轮已实测）✅ |
+| 自绘任务 checkbox | 3/3 全带 role=checkbox+aria-checked ✅ |
+| 菜单语义 | role=menu + 4×menuitem ✅ |
+| 键盘首停点 | 顶栏（非隐藏元素）✅ |
+
+**记档不修——同页双可见 h1**：阅读视图 `#doc-title`(h1, viewer 提升正文标题) 与正文 `# 週次定例`(mdrender h1) 并存。属 Lighthouse「document has exactly one h1」低权重最佳实践项（非失败项，#20 第一轮手动清单判定时同构已存在）。修法需动 viewer 标题提升或视图标题层级，任一方案都会引入「无 h1 文档」（正文无 h1 时）新瑕疵——收益/风险不成立，维持现状。
+
+**测量陷阱记档（第六例）**：①`h1:not([hidden])` 不反映祖先 hidden（git/health 视图的 h1 在 hidden section 内仍被选中）——可见性必须用 `offsetParent`；②对比度采样前未显式设主题，会话 localStorage 残留 dark 导致「light 段」测的是 dark（两段同色 rgb(216,210,200)=dark ink 即铁证）；③透明背景的对比度计算需逐父级找首个不透明 bg，字符串比较 'rgba(0, 0, 0, 0)' 空格变体脆断（light/dark 控件计算爆炸值即此 bug，以 GH 主题实体背景样本替代）。
+
+本轮零代码变更。docs/ 未触碰，health 全绿。
