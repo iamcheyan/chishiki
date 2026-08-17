@@ -230,3 +230,28 @@ chishiki/
 **遗留（用户在飞工作，未动）**：工作区含未完成的 git 版本面板（`web/js/git.js`+`view-git` 已接线，`/api/git/status`・`/api/git/log` 后端未实现，当前 404）；`index.html` 标签已升 `app.js?v=10` 但模块静态导入仍 `?v=9`、CSS 仍 v9——**版本错位会再触发双实例**（`app.js?v=10` 动态导入解析为 `ui.js?v=10`，与静态 `ui.js?v=9` 并存，VSN 机制要求静态/动态/标签三者同版本）。建议用户收口时把 CSS/JS 标签与全部 import 一同升 v10。
 
 本轮回归：`py_compile` 通过、服务重启后 health 全绿、CDP 全流程（阅读/代码块复制/?帮助/健康页/编辑器进出/搜索）零 console error；docs/ 测试产物清理完毕与 git 基线一致。
+
+### 8.8 第五轮（d9773e0→）：用户安全大修（a984820）验证收口 + rc 校验补完
+
+**背景**：用户自行完成 git 面板后端（83a21c5）→ topbar 修复（0297022）→ 安全大修（a984820：XSS 白名单/绑定收窄 127.0.0.1/图片删除限 assets+unquote/save overwrite 保护/自绘 checkbox/菜单 keydown/原子写 fsync/版本统一）。本轮逐项验证其收口并修复两个遗留。
+
+**验证矩阵（a984820，CDP 实测）**：
+
+| 项 | 结果 |
+|---|---|
+| XSS 白名单（mdrender） | `<script>`/`javascript:`/`data:text/html`/`<iframe>` 全剔除；`<img onerror>` 渲染为转义文本 `&lt;img...`（零活属性）；正常 https 链接保留 ✅ |
+| 绑定 127.0.0.1 | `ss` 确认 `127.0.0.1:8850`（unit+argparse 双改）✅ |
+| save overwrite 保护 | 无 overwrite 覆盖已存文档 → 409 `exists`；编辑器（带 `overwrite:true`）⌘S→磁盘 roundtrip ✅；moveFlow 不带 overwrite→移动撞名将 409 拒绝（语义正确，代码审阅）✅ |
+| 图片删除收紧 | 合法 `*_assets/` 全路径删除→磁盘文件+空目录回收 ✅；非资产路径（README.md）→404 拒绝 ✅ |
+| 自绘任务 checkbox | `- [ ]`/`- [x]` → `span.task-box`（role=checkbox/aria-checked），零原生 input ✅ |
+| 菜单 keydown | 主题菜单打开→普通键不误触（仍开/主题不变）→Esc 关闭 ✅ |
+| 版本统一 v12 | 9 模块全部 `?v=12` 单实例（resource 审计零分裂）✅ |
+| Git 面板按文档 | 有历史文档（工作手册/README.md）→面板标题/1 条历史/恢复按钮→恢复 8c228d6→磁盘字节一致并自动跳回文档 ✅ |
+
+**修复 1（d9773e0）——测试残留清除**：第五轮 E2E 期间用户并行提交（a984820 的 `git add -A`）把我两份测试产物收进了已推送提交：根目录 `読書メモ.md`（被 restore 探针覆盖为 1 行占位；原未跟踪内容不可恢复，**原件 `个人备忘/読書メモ.md` 无损**）与 `个人备忘/保護テスト.md`。已 `git rm` 两者并提交推送，health 全绿（11 篇/0 断链/0 丢图/0 孤儿/0 空目录）。**教训记档：对用户在飞工作区做破坏性 E2E（覆盖真实文档再恢复）必须全程 try/finally 且避开 add -A 时间窗；本轮两次翻车均源于此。**
+
+**修复 2——git 四端点 rc 校验落地**：a984820 提交信息声称"git四端点rc校验"但实际未实现（`/api/git/restore` 对无效 hash `deadbee` 返回 `ok:true`，面板会误报「戻しました」）。本轮补完：新增 `_git_rc()→(out, returncode)`，status/log/commit(add+commit)/restore 四端点 rc≠0 → 500 `ok:false`（detail 带 stderr 前 200 字）；实测 `deadbee`→500 + 面板 toast「失敗: restore failed」，正常路径（status/log/restore 成功恢复）不受影响。`_git()` 保留为兼容包装。
+
+**根因备忘（版本三重错位）**：曾同时存在 `ui.js?v=11`(标签)/`?v=9`(静态导入)/裸 `./ui.js`(git.js 导入) 三 URL → 三实例分裂；且用户改 app.js 内容未升标签 → 浏览器启发式缓存吐出旧 `app.js?v=11`（仍带 v9 导入）→ editor 旧副本无 overwrite:true → 保存 409。统一升 v12 后实测 9 模块单实例。**VSN 铁律不变：改内容必升版本，且标签/静态导入/动态导入（git.js 硬编码 `./app.js?v=N`）三者必须同版。**
+
+本轮回归：`py_compile`+`node --check` 全过；CDP 全流程（阅读/XSS 文档渲染/git 面板全局+按文档/恢复成功+失败路径/checkbox/菜单/编辑器保存）除刻意触发的 409/500 探针外零 console error；docs/ 与基线一致。**遗留**：用户在飞 topbar 検索/新規按钮迁移（web/index.html+app.js WIP，未动未提交）。
