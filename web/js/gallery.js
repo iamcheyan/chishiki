@@ -1,6 +1,6 @@
 /* gallery.js — 目录图库: 瀑布网格 / 复制 md 引用 / Lightbox(含删除) */
-import { $, $$, esc, api, icon, showdialog, toast, copyText, fmtSize } from './ui.js';
-import { lightboxOpen } from './viewer.js';
+import { $, $$, esc, api, icon, showdialog, toast, copyText, fmtSize } from './ui.js?v=5';
+import { lightboxOpen } from './viewer.js?v=5';
 
 /* 图片删除能力开关: 后端补 /api/image/delete 后置 true (当前后端冻结, 缺该端点) */
 const IMAGE_DELETE_API = false;

@@ -24,6 +24,7 @@ const PATHS = {
   check: '<path d="M20 6L9 17l-5-5"/>',
   close: '<path d="M6 6l12 12M18 6L6 18"/>',
   h: '<path d="M5 5v14M15 5v14M5 12h10"/>',
+  dots: '<circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
   bold: '<path d="M7 4h6a3.5 3.5 0 0 1 0 7H7zM7 11h7a3.5 3.5 0 0 1 0 7H7z"/>',
   italic: '<path d="M10 4h8M6 20h8M14.5 4l-5 16"/>',
   list: '<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',

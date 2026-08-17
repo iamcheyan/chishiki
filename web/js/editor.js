@@ -1,6 +1,7 @@
 /* editor.js — 编辑器: textarea+分屏预览 / 工具栏 / 贴图上传 / 草稿 / 保存 / 冲突检测 / 文档操作 */
-import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, fileUrl } from './ui.js';
-import * as tree from './tree.js';
+import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, fileUrl } from './ui.js?v=5';
+import * as tree from './tree.js?v=5';
+import * as search from './search.js?v=5';
 
 const DRAFT_PREFIX = 'chishiki:draft:';
 
@@ -459,6 +460,7 @@ export async function save() {
     updateStatus();
     setSaveState('saved', '保存済み');
     toast('保存しました');
+    search.invalidate();
     tree.refresh();
     return data;
   } catch (e) {
@@ -481,17 +483,29 @@ export async function backToRead() {
   if (ed.dirty) {
     const v = await showdialog({ title: '未保存の変更', message: '保存せずに閉じますか？（下書きは保持されます）', okText: '閉じる' });
     if (!v) return;
-    try { localStorage.setItem(DRAFT_PREFIX + ed.path, JSON.stringify({ content: ed.els.ta.value, ts: Date.now() / 1000 })); } catch (e) { /* noop */ }
   }
-  teardown();
+  leaveEditor();
   location.hash = '#/doc/' + encodeURIComponent(ed.path);
 }
-function teardown() {
+/* 路由离开编辑器: 脏内容同步落草稿, 停定时器 (DOM 留给下次 openEditor 重建) */
+export function leaveEditor() {
+  if (ed.els && ed.dirty && ed.path) {
+    try { localStorage.setItem(DRAFT_PREFIX + ed.path, JSON.stringify({ content: ed.els.ta.value, ts: Date.now() / 1000 })); } catch (e) { /* 满 */ }
+  }
   clearTimeout(ed.draftTimer);
   clearInterval(ed.pollTimer);
+  ed.conflict = false;
   if (ed.els) ed.els.view.innerHTML = '';
   ed.path = null; ed.els = null;
 }
+function teardown() {
+  leaveEditor();
+}
+addEventListener('beforeunload', () => {
+  if (ed.els && ed.dirty && ed.path) {
+    try { localStorage.setItem(DRAFT_PREFIX + ed.path, JSON.stringify({ content: ed.els.ta.value, ts: Date.now() / 1000 })); } catch (e) { /* 满 */ }
+  }
+});
 
 /* ---------- 外部变更轮询 ---------- */
 export function startConflictWatch() {
@@ -535,6 +549,7 @@ export async function newDocFlow(dirPath) {
   try {
     await api('/api/doc/create', { method: 'POST', json: { dir: dir || '', path: name, title: name } });
     toast('作成しました');
+    search.invalidate();
     await tree.refresh();
     location.hash = '#/doc/' + encodeURIComponent((dir ? dir + '/' : '') + name + (name.endsWith('.md') ? '' : '.md'));
   } catch (e) {
@@ -550,7 +565,7 @@ export async function renameFlow(node) {
   if (!name || name === cur) return;
   try {
     const d = await api('/api/doc/rename', { method: 'POST', json: { path: node.path, name } });
-    toast('名前を変更しました');
+    search.invalidate();
     await tree.refresh();
     if (tree.treeState.current === node.path) location.hash = '#/doc/' + encodeURIComponent(d.path);
   } catch (e) { toast(e.message, 'err'); }
@@ -580,6 +595,7 @@ export async function moveFlow(node) {
     await api('/api/doc/save', { method: 'POST', json: { path: (dest ? dest + '/' : '') + fname, content } });
     await api('/api/doc/delete', { method: 'POST', json: { path: node.path } });
     toast('移動しました');
+    search.invalidate();
     await tree.refresh();
     if (tree.treeState.current === node.path) location.hash = '#/doc/' + encodeURIComponent((dest ? dest + '/' : '') + fname);
   } catch (e) { toast(e.message, 'err'); }
@@ -610,6 +626,7 @@ export async function deleteFlow(node) {
   try {
     await api('/api/doc/delete', { method: 'POST', json: { path: node.path } });
     toast('削除しました');
+    search.invalidate();
     await tree.refresh();
     if (tree.treeState.current === node.path) location.hash = '#/';
   } catch (e) { toast(e.message, 'err'); }

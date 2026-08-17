@@ -1,25 +1,37 @@
 /* app.js — 引导 + hash 路由 + 主题 + 快捷键 + 抽屉/大纲/返回顶部 */
-import { $, $$, menu } from './ui.js';
-import * as tree from './tree.js';
-import * as viewer from './viewer.js';
-import * as editor from './editor.js';
-import * as search from './search.js';
-import * as gallery from './gallery.js';
+import { $, $$, menu } from './ui.js?v=5';
+import * as tree from './tree.js?v=5';
+import * as viewer from './viewer.js?v=5';
+import * as editor from './editor.js?v=5';
+import * as search from './search.js?v=5';
+import * as gallery from './gallery.js?v=5';
 
 /* ---------- 主题 ---------- */
 function applyTheme(t) {
   document.documentElement.dataset.theme = t;
   try { localStorage.setItem('chishiki:theme', t); } catch (e) { /* noop */ }
+  const dark = t === 'dark' || t === 'github-dark';
+  document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
   const mc = $('meta[name="theme-color"]');
-  if (mc) mc.content = t === 'dark' ? '#141414' : '#F7F3EA';
+  const colors = { 'light': '#F7F3EA', 'dark': '#141414', 'github-light': '#ffffff', 'github-dark': '#0d1117' };
+  if (mc) mc.content = colors[t] || '#F7F3EA';
 }
-function currentTheme() { return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'; }
+function currentTheme() {
+  const t = document.documentElement.dataset.theme;
+  if (t === 'dark' || t === 'github-dark') return 'dark';
+  return 'light';
+}
 function initTheme() {
-  applyTheme(currentTheme());
+  const saved = localStorage.getItem('chishiki:theme');
+  if (saved === 'github-light' || saved === 'github-dark') applyTheme(saved);
+  else applyTheme(currentTheme());
   $('#btn-theme').addEventListener('click', e => {
+    const cur = document.documentElement.dataset.theme || 'light';
     menu(e.currentTarget, [
-      { label: 'ライト（紙と墨）', value: 'light', checked: currentTheme() === 'light' },
-      { label: 'ダーク', value: 'dark', checked: currentTheme() === 'dark' },
+      { label: 'ライト（紙と墨）', value: 'light', checked: cur === 'light' },
+      { label: 'ダーク', value: 'dark', checked: cur === 'dark' },
+      { label: 'GitHub Light', value: 'github-light', checked: cur === 'github-light' },
+      { label: 'GitHub Dark', value: 'github-dark', checked: cur === 'github-dark' },
     ]).then(v => { if (v) applyTheme(v); });
   });
 }
@@ -45,6 +57,8 @@ function parseHash() {
 
 async function route() {
   const { kind, rest, params } = parseHash();
+  // 离开编辑器: 脏内容同步落草稿, 停冲突轮询
+  if (!$('#view-editor').hidden && kind !== 'edit') editor.leaveEditor();
   if (kind === 'doc' && rest) {
     const path = decodeURIComponent(rest);
     const anchor = params.get('h') || null;
@@ -131,17 +145,22 @@ let mobileOutlineOpen = false;
 function hideMobileOutline() {
   mobileOutlineOpen = false;
   $('#outline').removeAttribute('mobile-panel');
-  /* 字体档位切换: serif(默认明朝体)/sans(黑体) */
-$('#btn-font').textContent = 'あ';
-$('#btn-font')?.addEventListener('click', () => {
-  const cur = document.documentElement.getAttribute('data-font') || 'serif';
-  const next = cur === 'serif' ? 'sans' : 'serif';
-  document.documentElement.setAttribute('data-font', next);
-  localStorage.setItem('chishiki-font', next);
-});
-if (localStorage.getItem('chishiki-font') === 'sans') document.documentElement.setAttribute('data-font', 'sans');
-$('#btn-outline').setAttribute('aria-expanded', 'false');
+  $('#btn-outline').setAttribute('aria-expanded', 'false');
 }
+/* 字体档位切换: serif(默认明朝体)/sans(黑体) — 初始化只做一次 */
+function initFontToggle() {
+  const btn = $('#btn-font');
+  if (!btn || btn._fontBound) return;
+  btn._fontBound = true;
+  btn.textContent = 'あ';
+  btn.addEventListener('click', () => {
+    const cur = document.documentElement.getAttribute('data-font') || 'serif';
+    const next = cur === 'serif' ? 'sans' : 'serif';
+    document.documentElement.setAttribute('data-font', next);
+    localStorage.setItem('chishiki-font', next);
+  });
+}
+if (localStorage.getItem('chishiki-font') === 'sans') document.documentElement.setAttribute('data-font', 'sans');
 $('#btn-outline').addEventListener('click', () => {
   mobileOutlineOpen = !mobileOutlineOpen;
   if (mobileOutlineOpen) {
@@ -149,6 +168,11 @@ $('#btn-outline').addEventListener('click', () => {
     $('#outline').hidden = false;
   } else hideMobileOutline();
   $('#btn-outline').setAttribute('aria-expanded', String(mobileOutlineOpen));
+});
+
+// 面板内点链接 → 跳转后收起
+$('#outline-nav').addEventListener('click', e => {
+  if (mobileOutlineOpen && e.target.closest('a')) hideMobileOutline();
 });
 
 /* ---------- 返回顶部 ---------- */
@@ -212,7 +236,7 @@ addEventListener('resize', syncResponsive);
 
 /* ---------- boot ---------- */
 async function boot() {
-  initTheme();
+  initFontToggle();
   search.init();
   editor.initFileInput();
   syncResponsive();

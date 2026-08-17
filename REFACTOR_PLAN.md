@@ -177,3 +177,19 @@ chishiki/
 `screenshots/`（均为 PNG，1024×640 / 390比例缩放）：
 - 桌面: desktop-{light,dark}-{reader,search,editor,gallery,lightbox,menu}.png
 - 移动: mobile-{light,dark}-{reader,drawer,outline,search,editor,lightbox}.png
+
+### 8.5 追加打磨（第二轮，2026-08-17 午后）
+
+交付自审 + 与 `3c73392`（收藏夹区块/主题滚动条/serif-sans 字体切换等增强）合流后的修复：
+
+| # | 问题 | 修复 | 验证 |
+|---|---|---|---|
+| 1 | 路由离开编辑器无防护：编辑中点树上文档直接丢状态，<5s 的输入连草稿都没有 | `editor.leaveEditor()`（脏内容同步落草稿+停冲突轮询）挂入 `route()`；另加 `beforeunload` 兜底 | CDP: 输入 150ms 后路由离开→localStorage 草稿含新词；重进提示恢复且还原 |
+| 2 | 搜索索引会话内永不失效：保存/新建/改名/移动/删除后再搜仍是旧结果 | `search.invalidate()`，六处变更点（save/create/rename/move/delete/新建文件夹）调用 | 编辑加独有词「ZZQK」保存→⌘K 不刷新页面即命中 |
+| 3 | 移动大纲面板点链接后不收起 | `#outline-nav` 点击委托收起 | 390×844: 点第2节→面板关+滚动到位 |
+| 4 | 树行「操作」按钮复用 H 标题图标 | 新增 `dots` 三点图标（fill 圆点覆盖 svg 级 fill=none） | DOM 断言 `a-more svg circle` 存在，菜单4项正常开合 |
+| 5 | `3c73392` 字体切换初始化塞在 `hideMobileOutline()` 内：每次调用重复挂监听器，累计后单击切换 N 次（偶数=失效） | 移出为 `initFontToggle()`（boot 调用 + `_fontBound` 一次性守卫） | 多次触发 hideMobileOutline 后单击仅切换一档 serif→sans |
+| 6 | 误提交 `bin/__pycache__/*.pyc`（未改 bin/ 代码本身） | 建 `.gitignore`（`__pycache__/` `*.pyc`）+ `git rm --cached` | 工作区此后无 pyc 噪音 |
+| 7 | 模块间 import 裸路径，浏览器启发式缓存可能吃到陈旧模块 | 全部 import 说明符与 `<link>/<script>` 统一 `?v=5` | 服务端 grep 校验 12 处 import + 2 处标签全带版本 |
+
+回归：node --check 7/7 通过；console.log/原生控件 grep 零命中；CDP 冒烟（树 11 文件/dots 菜单/字体按钮/收藏区块/编辑进出/搜索失效/移动大纲收起）pageerror 与 console.error 均 0；docs/ 内容与 git 基线完全一致（验收测试写入已还原）。

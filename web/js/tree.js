@@ -1,5 +1,6 @@
 /* tree.js — 侧栏文档树: 展开/折叠记忆, 当前下划线, hover 操作, 最近+收藏 */
-import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime } from './ui.js';
+import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime } from './ui.js?v=5';
+import { invalidate as invalidateSearch } from './search.js?v=5';
 
 const LS_EXPANDED = 'chishiki:expanded';
 const LS_RECENT = 'chishiki:recent';
@@ -121,7 +122,7 @@ function buildFile(n) {
     </button>
     <span class="acts">
       <button type="button" class="a-star ${starred ? 'star-on' : ''}" aria-label="お気に入り" title="お気に入り">${icon('star', 13)}</button>
-      <button type="button" class="a-more" aria-label="操作" title="操作">${icon('h', 13)}</button>
+      <button type="button" class="a-more" aria-label="操作" title="操作">${icon('dots', 13)}</button>
     </span>`;
   row.querySelector('.open-doc').addEventListener('click', () => {
     location.hash = '#/doc/' + encodeURIComponent(n.path);
@@ -226,6 +227,7 @@ async function newDirFlow(dirPath) {
     const dir = dirPath ? dirPath + '/' + name : name;
     await api('/api/doc/create', { method: 'POST', json: { dir, path: 'README', title: name } });
     toast('フォルダを作成しました');
+    invalidateSearch();
     await refresh();
   } catch (e) {
     toast(e.message, 'err');

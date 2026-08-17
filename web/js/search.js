@@ -1,5 +1,5 @@
 /* search.js — ⌘K 搜索: CJK 2-gram + 拉丁分词, AND 匹配, 标题×5/章节×3/正文×1 */
-import { $, $$, esc, api } from './ui.js';
+import { $, $$, esc, api } from './ui.js?v=5';
 
 let index = null;
 let loadingPromise = null;
@@ -16,6 +16,11 @@ export function loadIndex(force = false) {
     return index;
   }).catch(e => { loadingPromise = null; throw e; });
   return loadingPromise;
+}
+
+/* 文档变更(保存/新建/改名/移动/删除)后调用: 下次打开面板重新拉取 */
+export function invalidate() {
+  index = null;
 }
 
 /* ---------- 分词 ---------- */

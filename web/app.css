@@ -61,6 +61,97 @@ html[data-theme="dark"]{
 html[data-theme="light"]{ --muted-2:color-mix(in srgb,var(--muted) 46%,var(--ink)); }
 html[data-theme="dark"]{ --muted-2:color-mix(in srgb,var(--muted) 62%,var(--ink)); }
 
+/* ===== GitHub 主题: 配色/字体栈/渲染与 github.com 一致 ===== */
+html[data-theme="github-light"]{
+  --font-serif:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;
+  --font-mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+
+  --bg:#ffffff; --bg-elev:#f6f8fa; --ink:#1f2328; --muted:#59636e;
+  --rule:#d1d9e0; --rule-strong:#afb8c1;
+  --accent:#0969da; --sel:rgba(9,105,218,.12);
+  --soft:#f6f8fa;
+  --scrim:rgba(31,35,40,.5);
+  --shadow-pop:0 8px 24px rgba(31,35,40,.12);
+  --shadow-soft:0 1px 3px rgba(31,35,40,.06);
+  --mark-bg:rgba(187,128,9,.18);
+  --warn-bg:rgba(154,106,62,.08);     /* GitHub attention subtlety */
+  --tip-bg:rgba(9,105,218,.06);
+  --muted-2:#6e7781;
+  --gh-link:#0969da;
+  --gh-code-bg:#eff2f5;               /* GitHub 行内代码底 */
+  --gh-pre-bg:#f6f8fa;                /* GitHub 代码块底 */
+  --gh-pre-border:#d1d9e0b3;
+  --gh-th-bg:#f6f8fa;                 /* 表头底 */
+  --gh-quote:#59636e;                 /* 引用文字色 */
+  --gh-quote-bar:#d1d9e0;
+}
+html[data-theme="github-dark"]{
+  --font-serif:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;
+  --font-mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+
+  --bg:#0d1117; --bg-elev:#151b23; --ink:#f0f6fc; --muted:#9198a1;
+  --rule:#3d444d; --rule-strong:#59636e;
+  --accent:#4493f8; --sel:rgba(68,147,248,.16);
+  --soft:#151b23;
+  --scrim:rgba(1,4,9,.7);
+  --shadow-pop:0 8px 24px rgba(1,4,9,.8);
+  --shadow-soft:0 1px 3px rgba(1,4,9,.5);
+  --mark-bg:rgba(187,128,9,.28);
+  --warn-bg:rgba(159,138,115,.10);
+  --tip-bg:rgba(68,147,248,.08);
+  --muted-2:#9198a1;
+  --gh-link:#4493f8;
+  --gh-code-bg:rgba(101,108,118,.2);
+  --gh-pre-bg:#151b23;
+  --gh-pre-border:#3d444d;
+  --gh-th-bg:#151b23;
+  --gh-quote:#9198a1;
+  --gh-quote-bar:#3d444d;
+}
+/* GitHub 渲染细节: markdown 正文排版向 github.com 对齐 */
+html[data-theme^="github"] .md-body{
+  font-family:var(--font-serif);
+  font-size:16px; line-height:1.6; letter-spacing:0;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+html[data-theme^="github"] .md-body h1, html[data-theme^="github"] .md-body h2{
+  padding-bottom:.3em; border-bottom:1px solid var(--rule);
+  font-weight:600; letter-spacing:-.01em;
+}
+html[data-theme^="github"] .md-body h1{ font-size:2em; margin:.67em 0; }
+html[data-theme^="github"] .md-body h2{ font-size:1.5em; }
+html[data-theme^="github"] .md-body h3{ font-size:1.25em; font-weight:600; }
+html[data-theme^="github"] .md-body h4, html[data-theme^="github"] .md-body h5{ font-weight:600; }
+html[data-theme^="github"] .md-body p{ margin:0 0 16px; }
+html[data-theme^="github"] .md-body code{
+  font-family:var(--font-mono); font-size:85%; padding:.2em .4em;
+  background:var(--gh-code-bg); border-radius:6px;
+}
+html[data-theme^="github"] .md-body pre{
+  background:var(--gh-pre-bg); border:1px solid var(--gh-pre-border);
+  border-radius:6px; padding:16px; overflow-x:auto;
+}
+html[data-theme^="github"] .md-body pre code{
+  background:none; padding:0; font-size:85%; line-height:1.45;
+}
+html[data-theme^="github"] .md-body table{ border-collapse:collapse; display:block; overflow-x:auto; }
+html[data-theme^="github"] .md-body th, html[data-theme^="github"] .md-body td{
+  border:1px solid var(--rule); padding:6px 13px;
+}
+html[data-theme^="github"] .md-body th{ background:var(--gh-th-bg); font-weight:600; }
+html[data-theme^="github"] .md-body blockquote{
+  color:var(--gh-quote); border-left:.25em solid var(--gh-quote-bar);
+  padding:0 1em; margin:0 0 16px;
+}
+html[data-theme^="github"] .md-body a{ color:var(--gh-link); text-decoration:none; }
+html[data-theme^="github"] .md-body a:hover{ text-decoration:underline; }
+html[data-theme^="github"] .md-body hr{ border:0; border-top:1px solid var(--rule); margin:24px 0; }
+html[data-theme^="github"] .md-body li + li{ margin-top:.25em; }
+html[data-theme^="github"] .md-body img{ max-width:100%; border-radius:6px; }
+html[data-theme^="github"] .md-title{ font-family:var(--font-serif); font-weight:600; }
+
 /* ===== Reset & base ===== */
 *,*::before,*::after{ margin:0; padding:0; box-sizing:border-box; }
 html{ height:100%; }

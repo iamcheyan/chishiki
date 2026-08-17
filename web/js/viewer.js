@@ -1,5 +1,5 @@
 /* viewer.js — 阅读渲染(图片重写/表格包裹) + 大纲滚动spy + Lightbox */
-import { $, $$, esc, api, fileUrl, icon, fmtTime } from './ui.js';
+import { $, $$, esc, api, fileUrl, icon, fmtTime } from './ui.js?v=5';
 
 export const state = { currentPath: null, pendingAnchor: null };
 
@@ -8,7 +8,7 @@ const lb = {
   images: [], idx: 0, scale: 1, tx: 0, ty: 0,
   onDelete: null, el: null, img: null, stage: null, count: null, delBtn: null,
   pointers: new Map(), pinchDist: 0, dragId: null, lastX: 0, lastY: 0,
-};
+, moved: false};
 
 function lbShow() {
   const im = lb.images[lb.idx];
@@ -95,6 +95,23 @@ export function lightboxOpen(images, idx, opts = {}) {
     };
     lb.stage.addEventListener('pointerup', up);
     lb.stage.addEventListener('pointercancel', up);
+    /* 点击空白关闭: 目标是 stage 本身(非图片/按钮), 且没有拖动过 */
+    lb.stage.addEventListener('click', e => {
+      if (e.target !== lb.stage) return;
+      if (lb.dragId !== null) return;                  // 刚拖完
+      if (lb.moved) { lb.moved = false; return; }      // 本轮 pointer 有位移
+      lightboxClose();
+    });
+    lb.stage.addEventListener('pointerdown', e => {
+      if (e.target === lb.stage) lb._downPt = { x: e.clientX, y: e.clientY };
+    }, true);
+    lb.stage.addEventListener('pointerup', e => {
+      if (lb._downPt) {
+        const d = Math.hypot(e.clientX - lb._downPt.x, e.clientY - lb._downPt.y);
+        lb.moved = d > 6;
+        lb._downPt = null;
+      }
+    }, true);
     /* 单指轻扫切换 (scale=1 时) */
     let swipeX = null, swipeY = null;
     lb.stage.addEventListener('touchstart', e => {
