@@ -361,3 +361,17 @@ docs/ 测试产物（回帰テスト×2 文档+assets+draft localStorage）全�
 **测试脚本陷阱记档（第四例）**：树行 `textContent`=标题（无 .md 后缀），全路径在 `dataset.path`——按 'xxx.md' 搜 textContent 永远落空；诊断时 `domFiles` 列表恰用 dataset.path 展示，掩盖了该差异。
 
 docs/ 测试产物（移動テスト×2+assets、Clean検証、README）全部清理，health 全绿。
+
+### 8.15 第十二轮（c306f8e→）：rename/图库删除最终态复测 + gallery 死代码清理
+
+**复测动机**：#8 rename 与 #10 图库删除自 8.4/8.7 轮后，相关后端经 a984820 收紧（image/delete 限 assets 目录+二次校验），UI 链路未在最终代码实证过。
+
+**rename E2E（UI 全链路）**：`改名前テスト.md`（含贴图）→ 树 ⋯→名前変更→对话框输入→変更 → 磁盘引用改写 `改名前テスト_assets/…`→`改名後テスト_assets/…`、assets 目录迁移（gallery API 确认新路径）、图片经 /files/ naturalWidth>0、旧路径 404、hash 自动跳新路径。✅
+
+**图库删除 E2E（a984820 收紧后 UI 层）**：gallery url `/files/个人备忘/xxx_assets/…` → 前端剥 `/files/` 得 docs 相对路径 → 收紧后的 `_safe_asset_path`（父目录须 `_assets`）匹配通过；复制 md 引用 toast→danger 对话框→删除→网格即时刷新→磁盘 404；删除被引用图后 health 如实报 missing=1（对话框已警告「参照も壊れます」），删文档后归零。✅ v19 再烟测一次同绿。
+
+**清理——gallery 死分支**：第一轮后端冻结期的能力开关 `IMAGE_DELETE_API`（第四轮已翻 true）+ 永不执行的降级 toast + 过期注释「后端缺该端点」一并移除（clean cutover；API 已永久存在）。JS v19 锁步，9 模块零分裂。
+
+**测试脚本事故记档（第五例）**：create 传参加入杂散空格（`'改 名前テスト'`）而后续步骤用无空格名——upload 400、引用字面量 `undefined`、rename 断言全被污染；先清理残档再以逐字段核对重跑通过。教训：多步 setup 的字符串参数跨步骤复用时以变量传递，不手抄。
+
+docs/ 测试产物（改名前後×2+assets、煙霧テスト）全部清理，health 全绿（11 篇/0/0/0）。

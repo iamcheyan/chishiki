@@ -1,9 +1,7 @@
 /* gallery.js — 目录图库: 瀑布网格 / 复制 md 引用 / Lightbox(含删除) */
-import { $, $$, esc, api, icon, showdialog, toast, copyText, fmtSize } from './ui.js?v=18';
-import { lightboxOpen } from './viewer.js?v=18';
+import { $, $$, esc, api, icon, showdialog, toast, copyText, fmtSize } from './ui.js?v=19';
+import { lightboxOpen } from './viewer.js?v=19';
 
-/* 图片删除能力开关: 后端补 /api/image/delete 后置 true (当前后端冻结, 缺该端点) */
-const IMAGE_DELETE_API = true;
 
 export async function showGallery(dir) {
   const view = $('#view-gallery');
@@ -55,12 +53,6 @@ async function delImage(im, imgs, fromLightbox = false) {
     okText: '削除', danger: true,
   });
   if (!ok) return;
-  if (!IMAGE_DELETE_API) {
-    // 后端冻结期缺图片删除端点(/api/doc/delete 限 .md)。
-    // 后端补 POST /api/image/delete {url} 后将 IMAGE_DELETE_API 置 true 即通。
-    toast('画像削除は後端 API 未実装のため利用できません（交付記録に記載）', 'err');
-    return;
-  }
   try {
     const relPath = im.url.replace(/^\/files\//, '');   // /files/x → x (docs 相对)
     await api('/api/image/delete', { method: 'POST', json: { url: relPath } });
