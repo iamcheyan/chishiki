@@ -1,6 +1,6 @@
 /* tree.js — 侧栏文档树: 展开/折叠记忆, 当前下划线, hover 操作, 最近+收藏 */
-import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime } from './ui.js?v=5';
-import { invalidate as invalidateSearch } from './search.js?v=5';
+import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime } from './ui.js?v=8';
+import { invalidate as invalidateSearch } from './search.js?v=8';
 
 const LS_EXPANDED = 'chishiki:expanded';
 const LS_RECENT = 'chishiki:recent';
@@ -98,6 +98,22 @@ function buildDir(n, ex, depth) {
   li.appendChild(row);
   if (n.children && n.children.length) li.appendChild(buildUl(n.children, ex, depth + 1));
   return li;
+}
+
+/* 展开到指定目录并滚动定位(面包屑用) */
+export function expandTo(dirPath) {
+  const ex = expandedSet();
+  let cur = '';
+  for (const seg of dirPath.split('/')) {
+    cur = cur ? cur + '/' + seg : seg;
+    ex.add(cur);
+  }
+  lsSet(LS_EXPANDED, [...ex]);
+  render();
+  requestAnimationFrame(() => {
+    const li = document.querySelector(`.tree [data-path="${CSS.escape(dirPath)}"]`);
+    if (li) li.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  });
 }
 
 function toggleDir(path) {

@@ -1,10 +1,10 @@
 /* app.js — 引导 + hash 路由 + 主题 + 快捷键 + 抽屉/大纲/返回顶部 */
-import { $, $$, menu } from './ui.js?v=5';
-import * as tree from './tree.js?v=5';
-import * as viewer from './viewer.js?v=5';
-import * as editor from './editor.js?v=5';
-import * as search from './search.js?v=5';
-import * as gallery from './gallery.js?v=5';
+import { $, $$, menu } from './ui.js?v=8';
+import * as tree from './tree.js?v=8';
+import * as viewer from './viewer.js?v=8';
+import * as editor from './editor.js?v=8';
+import * as search from './search.js?v=8';
+import * as gallery from './gallery.js?v=8';
 
 /* ---------- 主题 ---------- */
 function applyTheme(t) {
@@ -66,7 +66,7 @@ async function route() {
     viewer.state.currentPath = path;
     tree.setCurrent(path);
     tree.pushRecent(path);
-    $('#crumb').textContent = path;
+    renderCrumb(path);
     updateStarBtn(path);
     try {
       await viewer.showDoc(path, anchor);
@@ -243,8 +243,82 @@ async function boot() {
   syncResponsive();
   await tree.refresh().catch(() => {});
   addEventListener('hashchange', route);
+  viewer.watchScroll(() => viewer.state.currentPath);
   await route();
   // 空闲时预载搜索索引
   setTimeout(() => search.loadIndex().catch(() => {}), 1200);
 }
 boot();
+
+
+/* ---------- 面包屑: 目录可点 + 复制链接 ---------- */
+function renderCrumb(path) {
+  const el = document.getElementById('crumb');
+  el.textContent = '';
+  const parts = path.split('/');
+  parts.forEach((seg, i) => {
+    if (i) el.appendChild(document.createTextNode(' / '));
+    if (i === parts.length - 1) {
+      el.appendChild(document.createTextNode(seg));
+      const cp = document.createElement('button');
+      cp.type = 'button';
+      cp.className = 'crumb-copy';
+      cp.setAttribute('aria-label', 'リンクをコピー');
+      cp.title = 'リンクをコピー';
+      cp.addEventListener('click', async () => {
+        const url = location.origin + '/#/doc/' + encodeURIComponent(path);
+        try { await navigator.clipboard.writeText(url); }
+        catch (e) {
+          const ta = document.createElement('textarea');
+          ta.value = url; document.body.appendChild(ta); ta.select();
+          document.execCommand('copy'); ta.remove();
+        }
+        import('./ui.js').then(m => m.toast('リンクをコピーしました'));
+      });
+      el.appendChild(cp);
+    } else {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'crumb-dir';
+      b.textContent = seg;
+      b.addEventListener('click', () => {
+        // 展开并滚到该目录
+        import('./tree.js').then(m => m.expandTo && m.expandTo(parts.slice(0, i + 1).join('/')));
+      });
+      el.appendChild(b);
+    }
+  });
+}
+
+/* ---------- 快捷键帮助面板(? 呼出) ---------- */
+const SHORTCUTS = [
+  ['⌘/Ctrl + K', '全文検索'],
+  ['⌘/Ctrl + E', 'ドキュメントを編集'],
+  ['⌘/Ctrl + S', '保存（エディタ）'],
+  ['Esc', '検索・ダイアログを閉じる'],
+  ['?', 'このヘルプ'],
+];
+export function toggleShortcutHelp() {
+  let el = document.getElementById('shortcut-help');
+  if (el) { el.hidden = !el.hidden; return; }
+  el = document.createElement('div');
+  el.id = 'shortcut-help';
+  el.className = 'scrim';
+  el.addEventListener('click', e => { if (e.target === el) el.hidden = true; });
+  const card = document.createElement('div');
+  card.className = 'sc-help';
+  card.innerHTML = '<h2>キーボードショートカット</h2>' +
+    SHORTCUTS.map(([k, v]) => `<div class="sc-row"><kbd>${k}</kbd><span>${v}</span></div>`).join('') +
+    '<button type="button" class="sc-close">閉じる</button>';
+  card.querySelector('.sc-close').addEventListener('click', () => { el.hidden = true; });
+  el.appendChild(card);
+  document.body.appendChild(el);
+}
+document.addEventListener('keydown', e => {
+  if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    e.preventDefault();
+    toggleShortcutHelp();
+  }
+});

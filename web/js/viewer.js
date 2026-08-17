@@ -1,5 +1,5 @@
 /* viewer.js — 阅读渲染(图片重写/表格包裹) + 大纲滚动spy + Lightbox */
-import { $, $$, esc, api, fileUrl, icon, fmtTime } from './ui.js?v=5';
+import { $, $$, esc, api, fileUrl, icon, fmtTime } from './ui.js?v=8';
 
 export const state = { currentPath: null, pendingAnchor: null };
 
@@ -148,6 +148,9 @@ export async function showDoc(path, anchor) {
 
   const body = $('#md-body');
   body.innerHTML = data.html;
+  /* 阅读位置恢复 */
+  const saved = readScroll(path);
+  if (!anchor && saved > 0) main.scrollTop = saved;
 
   /* 标题栏信息 */
   const h1 = body.querySelector('h1');
@@ -165,6 +168,35 @@ export async function showDoc(path, anchor) {
     if (!im.alt) im.alt = im.getAttribute('title') || '画像';
     lbImages.push({ url: im.src, alt: im.alt, name: raw.split('/').pop() });
   });
+  /* 代码块: 快速复制按钮(右上角, hover 显现, 自绘无原生) */
+  $$('pre', body).forEach(pre => {
+    pre.style.position = 'relative';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pre-copy';
+    btn.textContent = 'コピー';
+    btn.setAttribute('aria-label', 'コードをコピー');
+    btn.addEventListener('click', async () => {
+      const code = pre.querySelector('code');
+      const text = (code || pre).textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = '✓ コピー済み';
+        btn.classList.add('copied');
+      } catch (e) {
+        // 剪贴板不可用(非安全上下文): textarea 兜底
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+        document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); ta.remove();
+        btn.textContent = '✓ コピー済み';
+        btn.classList.add('copied');
+      }
+      setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 1600);
+    });
+    pre.appendChild(btn);
+  });
+
   imgs.forEach((im, i) => {
     im.addEventListener('click', () => lightboxOpen(lbImages, i));
     im.setAttribute('tabindex', '0');
@@ -236,4 +268,30 @@ export function spyScroll() {
     }
     spyLinks.forEach((a, i) => a.classList.toggle('cur', i === cur));
   });
+}
+
+
+/* ---------- 阅读位置记忆 ---------- */
+const SCROLL_KEY = 'chishiki:scroll';
+function readScroll(path) {
+  try { return (JSON.parse(localStorage.getItem(SCROLL_KEY) || '{}')[path]) || 0; } catch (e) { return 0; }
+}
+let _scrollTimer = null;
+export function watchScroll(getPath) {
+  const main = document.getElementById('main');
+  main.addEventListener('scroll', () => {
+    if (_scrollTimer) return;
+    _scrollTimer = setTimeout(() => {
+      _scrollTimer = null;
+      const p = getPath();
+      if (!p || !main.scrollTop) return;
+      try {
+        const m = JSON.parse(localStorage.getItem(SCROLL_KEY) || '{}');
+        m[p] = main.scrollTop;
+        const keys = Object.keys(m);
+        if (keys.length > 200) delete m[keys[0]];   // 容量保护
+        localStorage.setItem(SCROLL_KEY, JSON.stringify(m));
+      } catch (e) { /* noop */ }
+    }, 400);
+  }, { passive: true });
 }

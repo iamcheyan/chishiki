@@ -1,7 +1,7 @@
 /* editor.js — 编辑器: textarea+分屏预览 / 工具栏 / 贴图上传 / 草稿 / 保存 / 冲突检测 / 文档操作 */
-import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, fileUrl } from './ui.js?v=5';
-import * as tree from './tree.js?v=5';
-import * as search from './search.js?v=5';
+import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, fileUrl } from './ui.js?v=8';
+import * as tree from './tree.js?v=8';
+import * as search from './search.js?v=8';
 
 const DRAFT_PREFIX = 'chishiki:draft:';
 
@@ -484,8 +484,9 @@ export async function backToRead() {
     const v = await showdialog({ title: '未保存の変更', message: '保存せずに閉じますか？（下書きは保持されます）', okText: '閉じる' });
     if (!v) return;
   }
+  const path = ed.path;
   leaveEditor();
-  location.hash = '#/doc/' + encodeURIComponent(ed.path);
+  location.hash = '#/doc/' + encodeURIComponent(path);
 }
 /* 路由离开编辑器: 脏内容同步落草稿, 停定时器 (DOM 留给下次 openEditor 重建) */
 export function leaveEditor() {
