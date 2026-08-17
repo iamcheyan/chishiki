@@ -7,6 +7,7 @@ import * as editor from './editor.js?v=9';
 import * as search from './search.js?v=9';
 import * as gallery from './gallery.js?v=9';
 import * as health from './health.js?v=9';
+import * as gitpanel from './git.js?v=10';
 
 /* ---------- 主题 ---------- */
 function applyTheme(t) {
@@ -39,7 +40,7 @@ function initTheme() {
 }
 
 /* ---------- 视图切换 ---------- */
-const VIEWS = ['view-home', 'view-doc', 'view-editor', 'view-gallery', 'view-health'];
+const VIEWS = ['view-home', 'view-doc', 'view-editor', 'view-gallery', 'view-health', 'view-git'];
 function showView(name) {
   for (const id of VIEWS) $('#' + id).hidden = id !== name;
   if (name !== 'view-doc') viewer.hideOutline(), hideMobileOutline();
@@ -86,6 +87,11 @@ async function route() {
     } catch (e) {
       location.hash = '#/doc/' + encodeURIComponent(path);
     }
+  } else if (kind === 'git') {
+    showView('view-git');
+    $('#crumb').textContent = 'バージョン';
+    tree.setCurrent(null);
+    await gitpanel.showGit();
   } else if (kind === 'health') {
     showView('view-health');
     $('#crumb').textContent = 'ヘルスチェック';
@@ -201,6 +207,7 @@ document.addEventListener('chishiki:anchor', e => {
 /* ---------- 搜索入口 ---------- */
 $('#btn-search-open').addEventListener('click', () => search.open());
 $('#btn-newdoc').addEventListener('click', () => editor.newDocFlow(undefined));
+gitpanel.initGit();
 $('#btn-health').addEventListener('click', () => { location.hash = '#/health'; });
 
 /* ---------- 快捷键 ---------- */
@@ -330,3 +337,6 @@ document.addEventListener('keydown', e => {
     toggleShortcutHelp();
   }
 });
+
+
+export function currentDocPath() { return viewer.state.currentPath; }

@@ -38,6 +38,9 @@
       </button>
       <button id="btn-theme" class="icon-btn" aria-label="テーマ" aria-haspopup="menu">
       <button id="btn-font" class="icon-btn" aria-label="フォント切替" title="明朝体/ゴシック切替"></button>
+      <button id="btn-git" class="icon-btn" aria-label="バージョン" title="Gitバージョン・コミット">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="12" r="2.5"/><path d="M6 8.5v7M8.3 7l7.4 3.8"/></svg>
+      </button>
       <button id="btn-health" class="icon-btn" aria-label="ヘルスチェック" title="ヘルスチェック・データ整理">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg>
       </button>
@@ -80,6 +83,18 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/></svg>
           <p>まだドキュメントがありません。</p>
           <button id="btn-home-new" class="btn-ghost">新規作成</button>
+        </div>
+      </section>
+
+      <section id="view-git" class="view git" hidden>
+        <header class="doc-head">
+          <h1 class="doc-title">バージョン</h1>
+          <h2 id="git-doc-title" class="git-doc" hidden></h2>
+          <div class="doc-meta"><span class="doc-path">Git 履歴・コミット</span></div>
+        </header>
+        <div id="git-body" class="md-body"></div>
+        <div class="hl-actions">
+          <button id="btn-git-commit" class="btn-ghost" hidden>すべてコミット</button>
         </div>
       </section>
 
@@ -177,6 +192,6 @@
 
 <input id="file-input" type="file" accept="image/*" hidden>
 
-<script type="module" src="js/app.js?v=9"></script>
+<script type="module" src="js/app.js?v=10"></script>
 </body>
 </html>

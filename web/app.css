@@ -818,3 +818,13 @@ pre:hover .pre-copy, .pre-copy:focus-visible{ opacity:1; }
 .hl-list code{ font-family:var(--font-mono); font-size:12px; color:var(--muted-2); }
 .hl-size{ float:right; color:var(--muted-2); font-size:12px; font-family:var(--font-sans); }
 .hl-actions{ margin-top:22px; display:flex; gap:10px; }
+
+/* ===== Git 面板 ===== */
+.git-doc{ font-family:var(--font-sans); font-size:13px; color:var(--muted-2); margin:2px 0 0; font-weight:400; }
+.git-log-row{ padding:8px 0; }
+.git-subject{ font-size:13px; color:var(--ink); margin-top:2px; }
+.git-restore{
+  margin-top:5px; background:none; border:1px solid var(--rule); border-radius:4px;
+  font-family:var(--font-sans); font-size:11.5px; color:var(--muted-2); padding:3px 10px; cursor:pointer;
+}
+.git-restore:hover{ color:var(--accent); border-color:var(--accent); }

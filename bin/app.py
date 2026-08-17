@@ -326,6 +326,28 @@ class Handler(SimpleHTTPRequestHandler):
         if p.path == "/api/health":
             return self._json(200, {"ok": True, **_health_report(self.docs_dir)})
 
+        if p.path == "/api/git/status":
+            out = _git(self.docs_dir, "status", "--porcelain")
+            files = [l[3:] for l in out.splitlines() if l.strip()]
+            return self._json(200, {"ok": True, "dirty": len(files), "files": files[:100]})
+
+        if p.path == "/api/git/log":
+            q = parse_qs(p.query)
+            path = (q.get("path") or [""])[0]
+            args = ["log", "--pretty=format:%h|%ad|%s", "--date=format:%Y-%m-%d %H:%M", "-n", "10"]
+            if path:
+                md = _safe_md_path(self.docs_dir, path)
+                if md is None:
+                    return self._json(404, {"ok": False, "error": "not found"})
+                args += ["--", md.relative_to(self.docs_dir).as_posix()]
+            out = _git(self.docs_dir, *args)
+            entries = []
+            for l in out.splitlines():
+                parts = l.split("|", 2)
+                if len(parts) == 3:
+                    entries.append({"hash": parts[0], "date": parts[1], "subject": parts[2]})
+            return self._json(200, {"ok": True, "log": entries})
+
         if p.path == "/api/meta":
             n = len([m for m in self.docs_dir.rglob("*.md") if not m.name.startswith("_")])
             return self._json(200, {"ok": True, "docs": n,
@@ -406,14 +428,37 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._json(409, {"ok": False, "error": "exists"})
             try:
                 src.rename(dst)
-                # 同步迁移 <stem>_assets 目录(名字与文档脱钩问题)
+                # 迁移 <stem>_assets: 目标不存在→整目录改名; 已存在→逐文件合并(时间戳名冲突罕见, 冲突则加后缀)
                 old_assets = src.parent / f"{src.stem}_assets"
                 new_assets = dst.parent / f"{dst.stem}_assets"
-                if old_assets.is_dir() and not new_assets.exists():
-                    old_assets.rename(new_assets)
+                migrated = False
+                if old_assets.is_dir():
+                    if not new_assets.exists():
+                        old_assets.rename(new_assets)
+                        migrated = True
+                    else:
+                        for f in old_assets.iterdir():
+                            target = new_assets / f.name
+                            if target.exists():
+                                target = new_assets / (f.stem + "-" + dst.stem + f.suffix)
+                            f.rename(target)
+                        migrated = True
+                        try:
+                            if not any(old_assets.iterdir()):
+                                old_assets.rmdir()
+                        except OSError:
+                            pass
+                if migrated:
+                    # 同步改写 md 内引用, 否则目录搬走引用全断
+                    try:
+                        text = dst.read_text(encoding="utf-8")
+                        new_text = text.replace(f"{src.stem}_assets/", f"{dst.stem}_assets/")
+                        if new_text != text:
+                            _atomic_write(dst, new_text)
+                    except (OSError, UnicodeDecodeError):
+                        pass  # 引用改写失败不阻断改名
             except OSError:
                 return self._json(500, {"ok": False, "error": "rename failed"})
-            self._refresh()
             return self._json(200, {"ok": True, "path": dst.relative_to(d).as_posix()})
 
         if p.path == "/api/doc/delete":
@@ -474,6 +519,26 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(200, {"ok": True, "dry_run": dry,
                                     "candidates": len(report["orphan_images"]),
                                     "deleted": deleted})
+
+        if p.path == "/api/git/commit":
+            payload = self._body_json() or {}
+            msg = str(payload.get("message") or "").strip() or f"chishiki: update {time.strftime('%Y-%m-%d %H:%M')}"
+            if len(msg) > 200:
+                return self._json(400, {"ok": False, "error": "message too long"})
+            _git(self.docs_dir, "add", "-A")
+            out = _git(self.docs_dir, "commit", "-m", msg)
+            return self._json(200, {"ok": True, "result": out.strip()[:500]})
+
+        if p.path == "/api/git/restore":
+            payload = self._body_json()
+            if payload is None:
+                return self._json(400, {"ok": False, "error": "bad json"})
+            md = _safe_md_path(self.docs_dir, str(payload.get("path", "")), must_exist=False)
+            h = str(payload.get("hash", "")).strip()
+            if md is None or not re.fullmatch(r"[0-9a-f]{6,40}", h):
+                return self._json(400, {"ok": False, "error": "invalid"})
+            out = _git(self.docs_dir, "checkout", h, "--", md.relative_to(self.docs_dir).as_posix())
+            return self._json(200, {"ok": True, "result": out.strip()[:300]})
 
         return self._json(404, {"ok": False, "error": "not found"})
 
@@ -618,6 +683,16 @@ def _health_report(d: Path) -> dict:
         "empty_asset_dirs": empty_dirs,
         "dup_titles": dup_titles,
     }
+
+
+def _git(docs_dir: Path, *args: str) -> str:
+    """安全执行 git 只读/指定命令(超时10s)"""
+    try:
+        r = subprocess.run(["git", *args], cwd=str(docs_dir), capture_output=True,
+                           text=True, timeout=10)
+        return (r.stdout or "") + (("\n[stderr] " + r.stderr) if r.returncode else "")
+    except (OSError, subprocess.TimeoutExpired) as e:
+        return f"[error] {e}"
 
 
 def run_server(docs_dir: Path, host: str, port: int) -> None:

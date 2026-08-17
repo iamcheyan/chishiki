@@ -43,9 +43,12 @@ export async function showHealth() {
   run.hidden = true;
   dry.onclick = async () => {
     const r = await api('/api/clean', { method: 'POST', json: { dry_run: true } });
+    const parts = [];
+    if (r.candidates) parts.push(`孤立画像 ${r.candidates} 件`);
+    if (n.empty) parts.push(`空ディレクトリ ${n.empty} 件`);
     const ok = await showdialog({
       title: 'クリーンアップ',
-      message: `孤立画像 ${r.candidates} 件と空ディレクトリを削除します。元に戻せません。`,
+      message: `${parts.join(' と ')}を削除します。元に戻せません。`,
       okText: '削除実行', danger: true,
     });
     if (!ok) return;
