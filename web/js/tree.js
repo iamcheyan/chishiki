@@ -1,4 +1,5 @@
 /* tree.js — 侧栏文档树: 展开/折叠记忆, 当前下划线, hover 操作, 最近+收藏 */
+const VSN = (import.meta.url.match(/\?v=\d+/) || [''])[0];
 import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime } from './ui.js?v=8';
 import { invalidate as invalidateSearch } from './search.js?v=8';
 
@@ -89,7 +90,7 @@ function buildDir(n, ex, depth) {
   row.querySelector('.label').addEventListener('click', () => toggleDir(n.path));
   row.querySelector('.ic').addEventListener('click', () => toggleDir(n.path));
   row.querySelector('.a-newdoc').addEventListener('click', () => {
-    import('./editor.js').then(m => m.newDocFlow(n.path));
+    import('./editor.js' + VSN).then(m => m.newDocFlow(n.path));
   });
   row.querySelector('.a-newdir').addEventListener('click', () => newDirFlow(n.path));
   row.querySelector('.a-gallery').addEventListener('click', () => {
@@ -166,7 +167,7 @@ function fileMenu(anchor, n) {
     { label: '削除', value: 'del', icon: 'trash', danger: true },
   ]).then(v => {
     if (!v) return;
-    import('./editor.js').then(m => {
+    import('./editor.js' + VSN).then(m => {
       if (v === 'rename') m.renameFlow(n);
       else if (v === 'move') m.moveFlow(n);
       else if (v === 'del') m.deleteFlow(n);

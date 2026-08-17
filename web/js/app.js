@@ -1,4 +1,5 @@
 /* app.js — 引导 + hash 路由 + 主题 + 快捷键 + 抽屉/大纲/返回顶部 */
+const VSN = (import.meta.url.match(/\?v=\d+/) || [''])[0];
 import { $, $$, menu } from './ui.js?v=8';
 import * as tree from './tree.js?v=8';
 import * as viewer from './viewer.js?v=8';
@@ -273,7 +274,7 @@ function renderCrumb(path) {
           ta.value = url; document.body.appendChild(ta); ta.select();
           document.execCommand('copy'); ta.remove();
         }
-        import('./ui.js').then(m => m.toast('リンクをコピーしました'));
+        import('./ui.js' + VSN).then(m => m.toast('リンクをコピーしました'));
       });
       el.appendChild(cp);
     } else {
@@ -283,7 +284,7 @@ function renderCrumb(path) {
       b.textContent = seg;
       b.addEventListener('click', () => {
         // 展开并滚到该目录
-        import('./tree.js').then(m => m.expandTo && m.expandTo(parts.slice(0, i + 1).join('/')));
+        import('./tree.js' + VSN).then(m => m.expandTo && m.expandTo(parts.slice(0, i + 1).join('/')));
       });
       el.appendChild(b);
     }
