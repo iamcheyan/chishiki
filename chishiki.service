@@ -7,6 +7,15 @@ WorkingDirectory=/home/tetsuya/development/chishiki
 ExecStart=/home/tetsuya/development/chishiki/run.sh --host 127.0.0.1 --port 8850
 Restart=on-failure
 RestartSec=3
+# 轻量沙箱: 服务只需读写 docs/ 与自身代码目录
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/tetsuya/development/chishiki
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
 
 [Install]
 WantedBy=default.target

@@ -439,3 +439,13 @@ docs/ 测试产物（改名前後×2+assets、煙霧テスト）全部清理，h
 **测试事故记档（第八例）**：①裸 API 建文档后直接搜为空——初判「索引陈旧」错误，实为绕过 UI 未触发 invalidate（服务端 curl 即证新鲜）；②newDocFlow 对话框时序——450ms 等待不足致 `inp` null 崩脚本，且重跑触发 a984820 的 409 exists（首跑实际已建成功）——多步 UI 流每步等待 ≥600ms 且失败后先查磁盘再归因。
 
 本轮零代码变更。docs/ 零残留，health 五项全零。
+
+### 8.20 第十七轮（237c769→）：部署面审计 + systemd 沙箱加固
+
+**审计**：unit 与仓库一致、enabled、run.sh 正确；日志 2h 零错误零 traceback；路径穿越（`/files/../bin/app.py` path-as-is）与不存在资源均 404。唯一缺口：沙箱全开（NoNewPrivileges/PrivateTmp/ProtectSystem 全 no）。
+
+**加固**（`chishiki.service` + 部署机 unit 同步）：`NoNewPrivileges=true` `PrivateTmp=true` `ProtectSystem=strict` `ReadWritePaths=仓库目录` `ProtectHome=read-only` `ProtectKernelTunables/ProtectControlGroups/RestrictSUIDSGID=true`。daemon-reload+restart 后 `systemctl show` 全部生效。
+
+**沙箱下全功能冒烟（CDP+curl）**：建文档 ✅ 树/索引（12 entries）/git status（dirty 正确反映未提交）✅ 图片上传落 `箱テスト_assets/` ✅ 树 11 文件+阅读 ✅ 删除+空目录回收 ✅ health 归零 ✅ journal 零错误 ✅——git 子进程（/tmp 无关、`.git` 在读写白名单内）与全部写路径不受沙箱影响。
+
+本轮变更仅 unit 文件（服务配置，非 web 资源），无版本号动作。
