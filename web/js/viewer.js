@@ -8,7 +8,7 @@ const lb = {
   images: [], idx: 0, scale: 1, tx: 0, ty: 0,
   onDelete: null, el: null, img: null, stage: null, count: null, delBtn: null,
   pointers: new Map(), pinchDist: 0, dragId: null, lastX: 0, lastY: 0,
-, moved: false};
+  moved: false};
 
 function lbShow() {
   const im = lb.images[lb.idx];

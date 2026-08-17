@@ -326,7 +326,9 @@ kbd{
 .tree .acts{
   display:inline-flex; align-items:center; gap:1px; flex:none;
   visibility:hidden;          /* 常驻占位: hover 不改变行宽, 消除抖动 */
+  pointer-events:none;        /* 占位区自身不吞点击(否则label右端点击无效) */
 }
+.tree .acts button{ pointer-events:auto; }
 .tree .row:hover .acts,.tree .row:focus-within .acts{ visibility:visible; }
 .tree .acts button{
   width:22px; height:22px; border-radius:3px; color:var(--muted);

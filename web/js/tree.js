@@ -125,7 +125,12 @@ function buildFile(n) {
       <button type="button" class="a-more" aria-label="操作" title="操作">${icon('dots', 13)}</button>
     </span>`;
   row.querySelector('.open-doc').addEventListener('click', () => {
-    location.hash = '#/doc/' + encodeURIComponent(n.path);
+    const target = '#/doc/' + encodeURIComponent(n.path);
+    if (location.hash === target) {
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    } else {
+      location.hash = target;
+    }
   });
   row.querySelector('.a-star').addEventListener('click', () => toggleStar(n.path));
   row.querySelector('.a-more').addEventListener('click', e => {

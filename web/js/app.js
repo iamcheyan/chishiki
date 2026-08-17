@@ -236,6 +236,7 @@ addEventListener('resize', syncResponsive);
 
 /* ---------- boot ---------- */
 async function boot() {
+  initTheme();
   initFontToggle();
   search.init();
   editor.initFileInput();
