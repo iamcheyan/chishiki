@@ -869,17 +869,20 @@ pre:hover .pre-copy, .pre-copy:focus-visible{ opacity:1; }
 
 /* ===== 代码高亮 token ===== */
 /* 纸墨(默认): 低饱和墨系 */
-.tk-com{ color:var(--muted); font-style:italic; }
-.tk-str{ color:#7A6A52; }               /* 淡墨棕 */
-html[data-theme="dark"] .tk-str{ color:#B5A488; }
-.tk-kwd{ color:var(--accent); font-weight:600; }
-.tk-num{ color:#8A7B8F; }               /* 灰紫 */
-html[data-theme="dark"] .tk-num{ color:#A99BB0; }
-.tk-key{ color:#5A7059; }               /* 灰绿 */
-html[data-theme="dark"] .tk-key{ color:#93AC8F; }
-.tk-sec{ color:var(--accent); font-weight:600; }
-.tk-dec{ color:#8F7A5B; font-style:italic; }
-html[data-theme="dark"] .tk-dec{ color:#BFA87F; }
+.tk-com{ color:#8D867C; font-style:italic; }
+html[data-theme="dark"] .tk-com{ color:#7A756D; }
+.tk-str{ color:#8C5A3C; }               /* 赭石 */
+html[data-theme="dark"] .tk-str{ color:#D4A97A; }
+.tk-kwd{ color:#3E5C8F; font-weight:600; }   /* 靛青 */
+html[data-theme="dark"] .tk-kwd{ color:#8FB0E8; }
+.tk-num{ color:#7A4E8C; }               /* 紫 */
+html[data-theme="dark"] .tk-num{ color:#C9A0DC; }
+.tk-key{ color:#3F6E4E; }               /* 松绿 */
+html[data-theme="dark"] .tk-key{ color:#9CC9AB; }
+.tk-sec{ color:#3E5C8F; font-weight:600; }
+html[data-theme="dark"] .tk-sec{ color:#8FB0E8; }
+.tk-dec{ color:#8C5A3C; font-style:italic; }
+html[data-theme="dark"] .tk-dec{ color:#D4A97A; }
 
 /* GitHub 主题: 官方 highlight 配色 */
 html[data-theme="github-light"] .tk-com{ color:#59636e; }

@@ -13,7 +13,7 @@ _TK = {
     "yaml": "yaml", "yml": "yaml",
     "sql": "sql",
     "html": "html", "xml": "html", "svg": "html",
-    "css": "css",
+    "css": "css", "markdown": "plain", "md": "plain", "text": "plain", "txt": "plain",
     "ini": "ini", "toml": "ini", "conf": "ini", "cfg": "ini",
 }
 
@@ -121,11 +121,29 @@ def _kw_span(lang, word):
     return word in kws
 
 
+_SNIFF = ("python", "sh", "js", "json")
+
+
+def _sniff_lang(code: str) -> str:
+    """无语言标注时按关键词命中率猜"""
+    best, best_hits = None, 0
+    for cand in _SNIFF:
+        kws = _KW.get(cand)
+        if not kws:
+            continue
+        hits = sum(1 for w in re.findall(r"\b[A-Za-z_][A-Za-z0-9_]{1,}\b", code) if w in kws)
+        if hits > best_hits:
+            best, best_hits = cand, hits
+    return best if best_hits >= 2 else ""
+
+
 def highlight(code: str, lang_raw: str) -> str:
     """返回已转义+高亮的 HTML(纯 span, 无原生标签)"""
     lang = _TK.get((lang_raw or "").lower())
     if not lang:
-        return _esc(code)
+        lang = _sniff_lang(code)
+        if not lang:
+            return _esc(code)
     toks = _tokens_for_lang(lang)
     if not toks:
         return _esc(code)
@@ -144,9 +162,20 @@ def highlight(code: str, lang_raw: str) -> str:
             if m and (best is None or m.start() < best[0]):
                 best = (m.start(), m.end(), cls)
         if best is None:
-            out.append(_esc(code[i]))
-            i += 1
-            continue
+            # 剩余全部无 token 命中: 一次性处理关键词后结束
+            seg = code[i:]
+            if _KW.get(lang):
+                words = re.split(r"(\b[A-Za-z_][A-Za-z0-9_]*\b)", _esc(seg))
+                buf = []
+                for w in words:
+                    if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", w) and _kw_span(lang, w):
+                        buf.append(f'<span class="tk-kwd">{w}</span>')
+                    else:
+                        buf.append(w)
+                out.append("".join(buf))
+            else:
+                out.append(_esc(seg))
+            break
         start, end, cls = best
         # 普通文本段: 标识符里挑关键词
         if start > i:
