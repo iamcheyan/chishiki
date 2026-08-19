@@ -1,6 +1,6 @@
 /* tree.js — 侧栏文档树: 展开/折叠记忆, 当前下划线, hover 操作, 最近+收藏 */
 const VSN = (import.meta.url.match(/\?v=\d+/) || [''])[0];
-import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, copyText } from './ui.js?v=19';
+import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, copyText } from './ui.js?v=20';
 
 const LS_EXPANDED = 'chishiki:expanded';
 const LS_RECENT = 'chishiki:recent';
@@ -50,16 +50,32 @@ export function setCurrent(path) {
 
 /* ---------- 渲染 ---------- */
 export function render() {
+  const tab = currentTab();
   const root = $('#tree');
+  $('#fav-sec').hidden = tab !== 'fav';
+  root.hidden = tab === 'fav';
   root.innerHTML = '';
   if (!treeState.data || !treeState.data.length) {
     root.innerHTML = '<div style="padding:6px 20px;font-size:12.5px;color:var(--muted-2);font-family:var(--font-sans)">（ドキュメントがありません）</div>';
     return;
   }
+  if (tab === 'fav') {
+    renderFavList();
+    return;
+  }
   const ex = expandedSet();
   root.appendChild(buildUl(treeState.data, ex, 0));
-  renderSideList($('#recent-list'), $('#recent-sec'), recent(), true);
-  renderSideList($('#fav-list'), $('#fav-sec'), stars(), 'fav');
+}
+
+const LS_TAB = 'chishiki:tab';
+export function currentTab() { return lsGet(LS_TAB, 'all') === 'fav' ? 'fav' : 'all'; }
+function setTab(t) { lsSet(LS_TAB, t); setupTabs(); render(); }
+
+/* 当前项目: 打开的文档所属的顶层目录(高亮) */
+function currentProject() {
+  const c = treeState.current;
+  if (!c) return null;
+  return c.includes('/') ? c.split('/')[0] : null;
 }
 
 function buildUl(nodes, ex, depth) {
@@ -71,7 +87,9 @@ function buildUl(nodes, ex, depth) {
 
 function buildDir(n, ex, depth) {
   const li = document.createElement('li');
-  li.className = 'dir' + (ex.has(n.path) ? ' open' : '') + (n.children && n.children.length ? '' : ' empty');
+  const proj = currentProject();
+  const isProj = proj !== null && depth === 0 && n.path === proj;
+  li.className = 'dir' + (ex.has(n.path) ? ' open' : '') + (n.children && n.children.length ? '' : ' empty') + (isProj ? ' proj' : '');
   li.dataset.path = n.path;
   const open = ex.has(n.path);
   const row = document.createElement('div');
@@ -192,54 +210,51 @@ export function toggleStar(path) {
   document.dispatchEvent(new CustomEvent('chishiki:star', { detail: path }));
 }
 
-/* ---------- 最近 ---------- */
-export function recent() { return lsGet(LS_RECENT, []); }
-export function pushRecent(path) {
-  let r = [path, ...recent().filter(x => x !== path)].slice(0, 5);
-  lsSet(LS_RECENT, r);
-  renderSideList($('#recent-list'), $('#recent-sec'), r, true);
-}
-
-function renderSideList(ul, sec, paths, removable) {
+/* ---------- 收藏 tab 列表 ---------- */
+function renderFavList() {
+  const ul = $('#fav-list');
+  const paths = stars();
   ul.innerHTML = '';
-  sec.hidden = !paths.length;
+  if (!paths.length) {
+    ul.innerHTML = '<li class="fav-empty">まだお気に入りがありません</li>';
+    return;
+  }
   for (const p of paths) {
     const node = treeState.byPath.get(p);
     const li = document.createElement('li');
     li.innerHTML = `
       <button type="button" class="${p === treeState.current ? 'cur' : ''}">
         <span class="t">${esc(node ? (node.title || node.name) : p.split('/').pop())}</span>
-        ${removable ? `<span class="x" role="button" aria-label="削除">${icon('close', 11)}</span>` : ''}
+        <span class="x" role="button" aria-label="お気に入り解除">${icon('close', 11)}</span>
       </button>`;
-    li.querySelector('button').addEventListener('click', e => {
-      if (e.target.closest('.x')) {
-        if (removable === true) {           // 最近列表: 移除记录
-          lsSet(LS_RECENT, recent().filter(x => x !== p));
-          renderSideList(ul, sec, recent().filter(x => x !== p), true);
-        } else {                            // 收藏列表: 取消收藏
-          toggleStar(p);
-          renderSide();
-        }
-        return;
-      }
+    li.querySelector('.x').addEventListener('click', () => { toggleStar(p); });
+    li.querySelector('button:not(.x), button > .t').addEventListener('click', () => {
       location.hash = '#/doc/' + encodeURIComponent(p);
+    });
+    li.querySelector('button').addEventListener('click', e => {
+      if (!e.target.closest('.x')) location.hash = '#/doc/' + encodeURIComponent(p);
     });
     ul.appendChild(li);
   }
 }
 
-/* ---------- 收藏管理 ---------- */
-let favManageMode = false;
-function setupFavManage() {
-  const btn = document.getElementById('fav-manage');
-  if (!btn) return;
-  btn.addEventListener('click', () => {
-    favManageMode = !favManageMode;
-    btn.textContent = favManageMode ? '完了' : '管理';
-    document.getElementById('fav-list')?.classList.toggle('manage', favManageMode);
-  });
+/* 兼容旧调用(外部仍可能 pushRecent) */
+export function pushRecent(_p) { /* 最近浏览已移除 */ }
+export function recent() { return []; }
+
+/* ---------- 侧栏 Tabs ---------- */
+export function setupTabs() {
+  const all = $('#tab-all'), fav = $('#tab-fav');
+  if (!all || !fav) return;
+  const t = currentTab();
+  all.classList.toggle('active', t !== 'fav');
+  fav.classList.toggle('active', t === 'fav');
+  all.setAttribute('aria-selected', String(t !== 'fav'));
+  fav.setAttribute('aria-selected', String(t === 'fav'));
+  all.onclick = () => setTab('all');
+  fav.onclick = () => setTab('fav');
+  render();
 }
-setupFavManage();
 
 /* ---------- 新建文件夹 ---------- */
 async function newDirFlow(dirPath) {

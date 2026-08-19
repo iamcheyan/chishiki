@@ -1,13 +1,13 @@
 /* app.js — 引导 + hash 路由 + 主题 + 快捷键 + 抽屉/大纲/返回顶部 */
 const VSN = (import.meta.url.match(/\?v=\d+/) || [''])[0];
-import { $, $$, menu } from './ui.js?v=19';
-import * as tree from './tree.js?v=19';
-import * as viewer from './viewer.js?v=19';
-import * as editor from './editor.js?v=19';
-import * as search from './search.js?v=19';
-import * as gallery from './gallery.js?v=19';
-import * as health from './health.js?v=19';
-import * as gitpanel from './git.js?v=19';
+import { $, $$, menu } from './ui.js?v=20';
+import * as tree from './tree.js?v=20';
+import * as viewer from './viewer.js?v=20';
+import * as editor from './editor.js?v=20';
+import * as search from './search.js?v=20';
+import * as gallery from './gallery.js?v=20';
+import * as health from './health.js?v=20';
+import * as gitpanel from './git.js?v=20';
 
 /* ---------- 主题 ---------- */
 function applyTheme(t) {
@@ -68,7 +68,6 @@ async function route() {
     showView('view-doc');
     viewer.state.currentPath = path;
     tree.setCurrent(path);
-    tree.pushRecent(path);
     renderCrumb(path);
     updateStarBtn(path);
     try {
@@ -255,6 +254,7 @@ addEventListener('resize', syncResponsive);
 
 /* ---------- boot ---------- */
 async function boot() {
+  tree.setupTabs();
   initTheme();
   initFontToggle();
   search.init();

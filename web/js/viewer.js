@@ -1,5 +1,5 @@
 /* viewer.js — 阅读渲染(图片重写/表格包裹) + 大纲滚动spy + Lightbox */
-import { $, $$, esc, api, fileUrl, icon, fmtTime } from './ui.js?v=19';
+import { $, $$, esc, api, fileUrl, icon, fmtTime } from './ui.js?v=20';
 
 export const state = { currentPath: null, pendingAnchor: null };
 
@@ -152,9 +152,9 @@ export async function showDoc(path, anchor) {
   const saved = readScroll(path);
   if (!anchor && saved > 0) main.scrollTop = saved;
 
-  /* 标题栏信息 */
-  const h1 = body.querySelector('h1');
-  $('#doc-title').textContent = (h1 ? h1.textContent : path.split('/').pop().replace(/\.md$/, '')) || path;
+  /* 标题栏信息: 用文件名(去 .md), 不用 h1(文档内的 h1 与文件名可能不同) */
+  const fname = path.split('/').pop().replace(/\.md$/, '');
+  $('#doc-title').textContent = fname || path;
   $('#doc-path').textContent = path;
   $('#doc-mtime').textContent = fmtTime(data.mtime);
   document.dispatchEvent(new CustomEvent('chishiki:doc-loaded'));
