@@ -1,13 +1,13 @@
 /* app.js — 引导 + hash 路由 + 主题 + 快捷键 + 抽屉/大纲/返回顶部 */
 const VSN = (import.meta.url.match(/\?v=\d+/) || [''])[0];
-import { $, $$, menu } from './ui.js?v=20';
-import * as tree from './tree.js?v=20';
-import * as viewer from './viewer.js?v=20';
-import * as editor from './editor.js?v=20';
-import * as search from './search.js?v=20';
-import * as gallery from './gallery.js?v=20';
-import * as health from './health.js?v=20';
-import * as gitpanel from './git.js?v=20';
+import { $, $$, menu } from './ui.js?v=21';
+import * as tree from './tree.js?v=21';
+import * as viewer from './viewer.js?v=21';
+import * as editor from './editor.js?v=21';
+import * as search from './search.js?v=21';
+import * as gallery from './gallery.js?v=21';
+import * as health from './health.js?v=21';
+import * as gitpanel from './git.js?v=21';
 
 /* ---------- 主题 ---------- */
 function applyTheme(t) {
@@ -131,6 +131,14 @@ function updateStarBtn(path) {
 document.addEventListener('chishiki:star', () => updateStarBtn(viewer.state.currentPath));
 
 /* ---------- 编辑按钮 ---------- */
+// 打印结束(对话框关闭)后清理标记
+window.addEventListener('afterprint', () => document.body.classList.remove('printing'));
+$('#btn-export-pdf').addEventListener('click', () => {
+  const p = currentDocPath();
+  if (!p) return;
+  document.body.classList.add('printing');   // @media print 只留正文
+  window.print();                            // 浏览器"另存为 PDF"转 PDF
+});
 $('#btn-edit').addEventListener('click', () => {
   if (viewer.state.currentPath) location.hash = '#/edit/' + encodeURIComponent(viewer.state.currentPath);
 });

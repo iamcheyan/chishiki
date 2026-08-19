@@ -890,3 +890,19 @@ pre:hover .pre-copy, .pre-copy:focus-visible{ opacity:1; }
 .tree .dir.proj > .row .label{ color:var(--accent); font-weight:600; }
 /* ===== 收藏空态 ===== */
 .fav-empty{ padding:6px 8px; font-size:12.5px; color:var(--muted-2); font-family:var(--font-sans); }
+
+/* ===== 打印 / PDF 导出 ===== */
+@media print {
+  #topbar, #sidebar, #outline, #btn-export-pdf, .doc-actions,
+  .hl-actions, .pre-copy, #back-top { display: none !important; }
+  #layout{ display:block !important; }
+  #main{ overflow:visible !important; position:static !important; padding:0 !important; }
+  #view-doc{ display:block !important; }
+  .md-body{ font-size:11pt !important; line-height:1.7 !important; color:#000 !important; }
+  .md-body pre{ white-space:pre-wrap; border:1px solid #ccc; background:#fafafa !important; page-break-inside:avoid; }
+  .md-body pre code, .md-body code{ background:transparent !important; }
+  .md-body img, .md-body table{ page-break-inside:avoid; max-width:100% !important; }
+  .md-body a{ color:#000; text-decoration:underline; }
+  .doc-head{ position:static !important; }
+  body.printing * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

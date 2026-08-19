@@ -18,7 +18,7 @@
   }catch(e){}
 })();
 </script>
-<link rel="stylesheet" href="app.css?v=20">
+<link rel="stylesheet" href="app.css?v=21">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='4' y='3' width='13' height='18' rx='1.5' fill='none' stroke='%234A5568' stroke-width='1.5'/%3E%3Cpath d='M8 8h5M8 12h5' stroke='%234A5568' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E">
 </head>
 <body>
@@ -113,6 +113,9 @@
             <span id="doc-path" class="doc-path"></span>
             <span id="doc-mtime" class="doc-mtime"></span>
             <span class="doc-actions">
+              <button id="btn-export-pdf" class="icon-btn" aria-label="PDFとして保存" title="PDFとして保存">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 12h6M9 16h4"/></svg>
+              </button>
               <button id="btn-star" class="icon-btn" aria-label="お気に入り">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>
               </button>
@@ -188,6 +191,6 @@
 
 <input id="file-input" type="file" accept="image/*" hidden>
 
-<script type="module" src="js/app.js?v=20"></script>
+<script type="module" src="js/app.js?v=21"></script>
 </body>
 </html>
