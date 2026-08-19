@@ -1,6 +1,6 @@
 /* tree.js — 侧栏文档树: 展开/折叠记忆, 当前下划线, hover 操作, 最近+收藏 */
 const VSN = (import.meta.url.match(/\?v=\d+/) || [''])[0];
-import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, copyText } from './ui.js?v=23';
+import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, copyText } from './ui.js?v=24';
 
 const LS_EXPANDED = 'chishiki:expanded';
 const LS_RECENT = 'chishiki:recent';
@@ -45,7 +45,23 @@ export function setCurrent(path) {
     while (dir) { ex.add(dir); dir = dir.includes('/') ? dir.slice(0, dir.lastIndexOf('/')) : ''; }
     lsSet(LS_EXPANDED, [...ex]);
     render();
+    scrollToCurrent(path);
   }
+}
+
+/* 启动/切换时滚动侧边栏到当前文档(展开父级后调用) */
+function scrollToCurrent(path) {
+  requestAnimationFrame(() => {
+    const li = document.querySelector(`.tree .file[data-path="${CSS.escape(path)}"]`);
+    const sb = document.getElementById('sidebar');
+    if (!li || !sb) return;
+    const r = li.getBoundingClientRect(), sbR = sb.getBoundingClientRect();
+    if (r.top < sbR.top + 8) {
+      sb.scrollTop += r.top - sbR.top - 8;              // 在可视区上方 → 向上滚
+    } else if (r.bottom > sbR.bottom - 8) {
+      sb.scrollTop += r.bottom - sbR.bottom + 8;        // 在可视区下方 → 向下滚
+    }
+  });
 }
 
 /* ---------- 渲染 ---------- */
