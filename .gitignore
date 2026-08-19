@@ -1,2 +1,7 @@
 __pycache__/
 *.pyc
+
+# 文档内容不入库 — 每个人放自己的文档树
+docs/*
+!docs/.gitkeep
+!docs/README.md
