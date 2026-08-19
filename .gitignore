@@ -5,3 +5,6 @@ __pycache__/
 docs/*
 !docs/.gitkeep
 !docs/README.md
+
+# 本地截图/调试产物不入库
+screenshots/
