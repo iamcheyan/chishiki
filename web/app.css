@@ -305,10 +305,20 @@ kbd{
   min-width:0;
 }
 .tree .file > .row .label, .tree .file > .row .ic{ cursor:pointer; }
-.tree .file.cur > .row{ color:var(--ink); }
+/* 当前打开文档: 明显高亮(背景 + accent 色 + 下划线) */
+.tree .file.cur > .row{
+  background:var(--sel);
+  color:var(--accent);
+  border-radius:var(--radius-s);
+}
 .tree .file.cur > .row .label{
+  color:var(--accent);
+  font-weight:600;
   text-decoration:underline; text-underline-offset:4px; text-decoration-thickness:1.5px;
 }
+.tree .file.cur > .row .ic{ color:var(--accent); }
+.tree .file.cur > .row .acts button{ color:var(--muted); }
+.tree .file.cur > .row .acts button:hover{ color:var(--accent); }
 .tree .acts{
   display:inline-flex; align-items:center; gap:1px; flex:none;
   visibility:hidden;          /* 常驻占位: hover 不改变行宽, 消除抖动 */

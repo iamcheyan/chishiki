@@ -1,6 +1,6 @@
 /* gallery.js — 目录图库: 瀑布网格 / 复制 md 引用 / Lightbox(含删除) */
-import { $, $$, esc, api, icon, showdialog, toast, copyText, fmtSize } from './ui.js?v=22';
-import { lightboxOpen } from './viewer.js?v=22';
+import { $, $$, esc, api, icon, showdialog, toast, copyText, fmtSize } from './ui.js?v=23';
+import { lightboxOpen } from './viewer.js?v=23';
 
 
 export async function showGallery(dir) {
