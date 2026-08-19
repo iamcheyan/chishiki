@@ -1,5 +1,5 @@
 /* git.js — 版本面板: 未提交/文档历史/恢复旧版/提交 */
-import { $, api, esc, toast, showdialog } from './ui.js?v=21';
+import { $, api, esc, toast, showdialog } from './ui.js?v=22';
 
 export async function showGit() {
   const view = $('#view-git');

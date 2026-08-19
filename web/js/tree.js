@@ -1,6 +1,6 @@
 /* tree.js — 侧栏文档树: 展开/折叠记忆, 当前下划线, hover 操作, 最近+收藏 */
 const VSN = (import.meta.url.match(/\?v=\d+/) || [''])[0];
-import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, copyText } from './ui.js?v=21';
+import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, copyText } from './ui.js?v=22';
 
 const LS_EXPANDED = 'chishiki:expanded';
 const LS_RECENT = 'chishiki:recent';
@@ -152,7 +152,7 @@ function buildFile(n) {
     <span class="caret-sp" style="width:20px;flex:none"></span>
     <button type="button" class="open-doc" style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;text-align:left">
       <span class="ic">${icon('file', 15)}</span>
-      <span class="label">${esc(n.title || n.name)}</span>
+      <span class="label">${esc(n.name)}</span>
     </button>
     <span class="acts">
       <button type="button" class="a-star ${starred ? 'star-on' : ''}" aria-label="お気に入り" title="お気に入り">${icon('star', 13)}</button>
@@ -224,7 +224,7 @@ function renderFavList() {
     const li = document.createElement('li');
     li.innerHTML = `
       <button type="button" class="${p === treeState.current ? 'cur' : ''}">
-        <span class="t">${esc(node ? (node.title || node.name) : p.split('/').pop())}</span>
+        <span class="t">${esc(node ? node.name : p.split('/').pop().replace(/\.md$/, ''))}</span>
         <span class="x" role="button" aria-label="お気に入り解除">${icon('close', 11)}</span>
       </button>`;
     li.querySelector('.x').addEventListener('click', () => { toggleStar(p); });
@@ -279,5 +279,5 @@ async function newDirFlow(dirPath) {
 /* 供外部查询标题 */
 export function titleOf(path) {
   const n = treeState.byPath.get(path);
-  return n ? (n.title || n.name) : path.split('/').pop().replace(/\.md$/, '');
+  return n ? (n.name) : path.split('/').pop().replace(/\.md$/, '');
 }
