@@ -1,6 +1,6 @@
-/* tree.js — 侧栏文档树: 展开/折叠记忆, 当前下划线, hover 操作, 最近+收藏 */
+/* tree.js — 侧栏文档树: 展开/折叠记忆, 当前下划线, hover Actions, 最近+收藏 */
 const VSN = (import.meta.url.match(/\?v=\d+/) || [''])[0];
-import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, copyText } from './ui.js?v=24';
+import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, copyText } from './ui.js?v=26';
 
 const LS_EXPANDED = 'chishiki:expanded';
 const LS_RECENT = 'chishiki:recent';
@@ -72,7 +72,7 @@ export function render() {
   root.hidden = tab === 'fav';
   root.innerHTML = '';
   if (!treeState.data || !treeState.data.length) {
-    root.innerHTML = '<div style="padding:6px 20px;font-size:12.5px;color:var(--muted-2);font-family:var(--font-sans)">（ドキュメントがありません）</div>';
+    root.innerHTML = '<div style="padding:6px 20px;font-size:12.5px;color:var(--muted-2);font-family:var(--font-sans)">(No documents)</div>';
     return;
   }
   if (tab === 'fav') {
@@ -111,13 +111,13 @@ function buildDir(n, ex, depth) {
   const row = document.createElement('div');
   row.className = 'row';
   row.innerHTML = `
-    <button type="button" class="caret" aria-label="${open ? '閉じる' : '開く'}" aria-expanded="${open}">${icon('caret', 12)}</button>
+    <button type="button" class="caret" aria-label="${open ? 'Close' : 'Open'}" aria-expanded="${open}">${icon('caret', 12)}</button>
     <span class="ic">${icon('folder', 15)}</span>
     <span class="label">${esc(n.name)}</span>
     <span class="acts">
-      <button type="button" class="a-newdoc" aria-label="新規ドキュメント" title="新規ドキュメント">${icon('plus', 13)}</button>
-      <button type="button" class="a-gallery" aria-label="ギャラリー" title="ギャラリー">${icon('image', 13)}</button>
-      <button type="button" class="a-newdir" aria-label="新規フォルダ" title="新規フォルダ">${icon('folder', 13)}</button>
+      <button type="button" class="a-newdoc" aria-label="New document" title="New document">${icon('plus', 13)}</button>
+      <button type="button" class="a-gallery" aria-label="Gallery" title="Gallery">${icon('image', 13)}</button>
+      <button type="button" class="a-newdir" aria-label="New folder" title="New folder">${icon('folder', 13)}</button>
     </span>`;
   row.querySelector('.caret').addEventListener('click', () => toggleDir(n.path));
   row.querySelector('.label').addEventListener('click', () => toggleDir(n.path));
@@ -171,8 +171,8 @@ function buildFile(n) {
       <span class="label">${esc(n.name)}</span>
     </button>
     <span class="acts">
-      <button type="button" class="a-star ${starred ? 'star-on' : ''}" aria-label="お気に入り" title="お気に入り">${icon('star', 13)}</button>
-      <button type="button" class="a-more" aria-label="操作" title="操作">${icon('dots', 13)}</button>
+      <button type="button" class="a-star ${starred ? 'star-on' : ''}" aria-label="Favorites" title="Favorites">${icon('star', 13)}</button>
+      <button type="button" class="a-more" aria-label="Actions" title="Actions">${icon('dots', 13)}</button>
     </span>`;
   row.querySelector('.open-doc').addEventListener('click', () => {
     const target = '#/doc/' + encodeURIComponent(n.path);
@@ -193,17 +193,17 @@ function buildFile(n) {
 function fileMenu(anchor, n) {
   const starred = stars().includes(n.path);
   menu(anchor, [
-    { label: '名前変更', value: 'rename', icon: 'pencil' },
-    { label: '移動', value: 'move', icon: 'move' },
-    { label: starred ? 'お気に入り解除' : 'お気に入り', value: 'star', icon: 'star' },
-    { label: 'リンクをコピー', value: 'copylink', icon: 'link' },
+    { label: 'Rename', value: 'rename', icon: 'pencil' },
+    { label: 'Move', value: 'move', icon: 'move' },
+    { label: starred ? 'Remove from favorites' : 'Favorites', value: 'star', icon: 'star' },
+    { label: 'Copy link', value: 'copylink', icon: 'link' },
     '-',
-    { label: '削除', value: 'del', icon: 'trash', danger: true },
+    { label: 'Delete', value: 'del', icon: 'trash', danger: true },
   ]).then(v => {
     if (!v) return;
     if (v === 'copylink') {
       copyText(location.origin + '/#/doc/' + encodeURIComponent(n.path)).then(ok =>
-        toast(ok ? 'リンクをコピーしました' : 'コピーに失敗しました', ok ? '' : 'err'));
+        toast(ok ? 'Link copied' : 'Copy failed', ok ? '' : 'err'));
       return;
     }
     import('./editor.js' + VSN).then(m => {
@@ -232,7 +232,7 @@ function renderFavList() {
   const paths = stars();
   ul.innerHTML = '';
   if (!paths.length) {
-    ul.innerHTML = '<li class="fav-empty">まだお気に入りがありません</li>';
+    ul.innerHTML = '<li class="fav-empty">No favorites yet</li>';
     return;
   }
   for (const p of paths) {
@@ -241,7 +241,7 @@ function renderFavList() {
     li.innerHTML = `
       <button type="button" class="${p === treeState.current ? 'cur' : ''}">
         <span class="t">${esc(node ? node.name : p.split('/').pop().replace(/\.md$/, ''))}</span>
-        <span class="x" role="button" aria-label="お気に入り解除">${icon('close', 11)}</span>
+        <span class="x" role="button" aria-label="Remove from favorites">${icon('close', 11)}</span>
       </button>`;
     li.querySelector('.x').addEventListener('click', () => { toggleStar(p); });
     li.querySelector('button:not(.x), button > .t').addEventListener('click', () => {
@@ -275,16 +275,16 @@ export function setupTabs() {
 /* ---------- 新建文件夹 ---------- */
 async function newDirFlow(dirPath) {
   const name = await showdialog({
-    title: '新規フォルダ',
-    message: `${dirPath} の下に作成します。`,
-    input: true, placeholder: 'フォルダ名', okText: '作成',
+    title: 'New folder',
+    message: `${dirPath}: create inside`,
+    input: true, placeholder: 'Folder name', okText: 'Create',
   });
   if (!name) return;
   // 后端无目录 API: 在新目录创建 README.md 占位 (create 的 dir 参数承担 mkdir parents)
   try {
     const dir = dirPath ? dirPath + '/' + name : name;
     await api('/api/doc/create', { method: 'POST', json: { dir, path: 'README', title: name } });
-    toast('フォルダを作成しました');
+    toast('Folder created');
     invalidateSearch();
     await refresh();
   } catch (e) {

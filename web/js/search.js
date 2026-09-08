@@ -1,5 +1,5 @@
 /* search.js — ⌘K 搜索: CJK 2-gram + 拉丁分词, AND 匹配, 标题×5/章节×3/正文×1 */
-import { $, $$, esc, api } from './ui.js?v=24';
+import { $, $$, esc, api } from './ui.js?v=26';
 
 let index = null;
 let loadingPromise = null;
@@ -18,7 +18,7 @@ export function loadIndex(force = false) {
   return loadingPromise;
 }
 
-/* 文档变更(保存/新建/改名/移动/删除)后调用: 下次打开面板重新拉取 */
+/* 文档变更(Save/新建/改名/移动/删除)后调用: 下次打开面板重新拉取 */
 export function invalidate() {
   index = null;
 }
@@ -142,11 +142,11 @@ function renderResults(results) {
   flatItems = [];
   activeIdx = -1;
   if (results === null) {
-    box.innerHTML = '<div class="sr-empty">キーワードで全文検索します（⌘K）</div>';
+    box.innerHTML = '<div class="sr-empty">Search all documents by keyword (⌘K)</div>';
     return;
   }
   if (!results.length) {
-    box.innerHTML = '<div class="sr-empty">一致するドキュメントが見つかりませんでした。</div>';
+    box.innerHTML = '<div class="sr-empty">No matching documents found.</div>';
     return;
   }
   box.innerHTML = '';

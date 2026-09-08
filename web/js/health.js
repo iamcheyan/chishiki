@@ -1,16 +1,16 @@
 /* health.js — 健康检查 + 孤儿图片清理 */
-import { $, $$, api, esc, toast, showdialog } from './ui.js?v=24';
+import { $, $$, api, esc, toast, showdialog } from './ui.js?v=26';
 
 export async function showHealth() {
   const view = $('#view-health');
   view.hidden = false;
-  $('#hl-body').innerHTML = '<p style="color:var(--muted-2)">確認中…</p>';
+  $('#hl-body').innerHTML = '<p style="color:var(--muted-2)">Checking…</p>';
   $('#btn-clean-run').hidden = true;
   let d;
   try {
     d = await api('/api/health');
   } catch (e) {
-    $('#hl-body').innerHTML = `<p>読み込み失敗: ${esc(e.message)}</p>`;
+    $('#hl-body').innerHTML = `<p>Load failed: ${esc(e.message)}</p>`;
     return;
   }
   const n = {
@@ -21,8 +21,8 @@ export async function showHealth() {
     dup: d.dup_titles.length,
   };
   const allGreen = !n.broken && !n.missing && !n.orphan && !n.empty && !n.dup;
-  $('#hl-summary').textContent = `ドキュメント ${d.docs} 篇 · ${
-    allGreen ? '問題なし ✓' : `要対応: ${[n.broken && '文書リンク切れ', n.missing && '画像欠落', n.orphan && `孤立画像 ${n.orphan}`, n.empty && '空ディレクトリ', n.dup && 'タイトル重複'].filter(Boolean).join('・')}`
+  $('#hl-summary').textContent = `Documents: ${d.docs} · ${
+    allGreen ? 'No problems ✓' : `Needs attention: ${[n.broken && 'Broken document links', n.missing && 'Missing images', n.orphan && `Unused images ${n.orphan}`, n.empty && 'Empty directories', n.dup && 'Duplicate titles'].filter(Boolean).join('・')}`
   }`;
 
   const sec = (title, items, fmt) => items.length ? `
@@ -30,12 +30,12 @@ export async function showHealth() {
     <ul class="hl-list">${items.map(fmt).join('')}</ul>` : '';
 
   $('#hl-body').innerHTML = `
-    ${sec('文書リンク切れ', d.broken_doc_links, x => `<li><code>${esc(x.doc)}</code> → ${esc(x.target)}</li>`)}
-    ${sec('参照切れ画像', d.missing_images, x => `<li><code>${esc(x.doc)}</code> → ${esc(x.url)}</li>`)}
-    ${sec('孤立画像（未参照）', d.orphan_images, x => `<li>${esc(x.path)} <span class="hl-size">${(x.size / 1024).toFixed(1)}KB</span></li>`)}
-    ${sec('空アセットディレクトリ', d.empty_asset_dirs, x => `<li>${esc(x)}</li>`)}
-    ${sec('タイトル重複', d.dup_titles, x => `<li>「${esc(x.title)}」<br><code>${esc(x.a)}</code> / <code>${esc(x.b)}</code></li>`)}
-    ${allGreen ? '<p style="color:var(--muted-2)">すべて正常です。</p>' : ''}`;
+    ${sec('Broken document links', d.broken_doc_links, x => `<li><code>${esc(x.doc)}</code> → ${esc(x.target)}</li>`)}
+    ${sec('Broken image references', d.missing_images, x => `<li><code>${esc(x.doc)}</code> → ${esc(x.url)}</li>`)}
+    ${sec('Unused images (not referenced)', d.orphan_images, x => `<li>${esc(x.path)} <span class="hl-size">${(x.size / 1024).toFixed(1)}KB</span></li>`)}
+    ${sec('Empty asset folders', d.empty_asset_dirs, x => `<li>${esc(x)}</li>`)}
+    ${sec('Duplicate titles', d.dup_titles, x => `<li>「${esc(x.title)}」<br><code>${esc(x.a)}</code> / <code>${esc(x.b)}</code></li>`)}
+    ${allGreen ? '<p style="color:var(--muted-2)">Everything is healthy.</p>' : ''}`;
 
   // 孤儿清理入口
   const dry = $('#btn-clean-dry'), run = $('#btn-clean-run');
@@ -44,16 +44,16 @@ export async function showHealth() {
   dry.onclick = async () => {
     const r = await api('/api/clean', { method: 'POST', json: { dry_run: true } });
     const parts = [];
-    if (r.candidates) parts.push(`孤立画像 ${r.candidates} 件`);
-    if (n.empty) parts.push(`空ディレクトリ ${n.empty} 件`);
+    if (r.candidates) parts.push(`Unused images: ${r.candidates}`);
+    if (n.empty) parts.push(`Empty directories: ${n.empty}`);
     const ok = await showdialog({
-      title: 'クリーンアップ',
-      message: `${parts.join(' と ')}を削除します。元に戻せません。`,
-      okText: '削除実行', danger: true,
+      title: 'Cleanup',
+      message: `Delete ${parts.join(' and ')}. This cannot be undone.`,
+      okText: 'Run delete', danger: true,
     });
     if (!ok) return;
     const r2 = await api('/api/clean', { method: 'POST', json: { dry_run: false } });
-    toast(`${r2.deleted.length} 件削除しました`);
+    toast(`${r2.deleted.length} item(s) deleted`);
     showHealth();
   };
 }

@@ -1,7 +1,7 @@
-/* editor.js — 编辑器: textarea+分屏预览 / 工具栏 / 贴图上传 / 草稿 / 保存 / 冲突检测 / 文档操作 */
-import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, fileUrl } from './ui.js?v=24';
-import * as tree from './tree.js?v=24';
-import * as search from './search.js?v=24';
+/* editor.js — 编辑器: textarea+分屏预览 / 工具栏 / 贴图上传 / 草稿 / Save / 冲突检测 / 文档Actions */
+import { $, $$, esc, api, icon, showdialog, menu, toast, fmtTime, fileUrl } from './ui.js?v=26';
+import * as tree from './tree.js?v=26';
+import * as search from './search.js?v=26';
 
 const DRAFT_PREFIX = 'chishiki:draft:';
 
@@ -32,7 +32,7 @@ function inlineMd(s, docPath) {
     return p;
   }).join('');
   s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g, (m, alt, src, title) =>
-    stash(`<img src="${escAttr(fileUrl(docPath, src))}" alt="${escAttr(alt || '画像')}"${title ? ` title="${escAttr(title)}"` : ''} class="md-img" loading="lazy">`));
+    stash(`<img src="${escAttr(fileUrl(docPath, src))}" alt="${escAttr(alt || 'Image')}"${title ? ` title="${escAttr(title)}"` : ''} class="md-img" loading="lazy">`));
   // 链接
   s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, txt, href) => {
     const ext = /^[a-z]+:\/\//.test(href) ? ' target="_blank" rel="noopener"' : '';
@@ -157,25 +157,25 @@ export async function openEditor(path) {
   view.innerHTML = `
     <div class="ed-banner" id="ed-banner" hidden></div>
     <div class="ed-head">
-      <button type="button" class="icon-btn ed-back" aria-label="戻る">
+      <button type="button" class="icon-btn ed-back" aria-label="Back">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
       </button>
-      <span class="ed-title">${esc(tree.titleOf(path))}<span class="dirty-dot" title="未保存"></span></span>
-      <div class="seg" role="group" aria-label="表示モード">
-        <button type="button" data-mode="edit">編集</button>
-        <button type="button" data-mode="split" class="on">分割</button>
-        <button type="button" data-mode="prev">プレビュー</button>
+      <span class="ed-title">${esc(tree.titleOf(path))}<span class="dirty-dot" title="Unsaved"></span></span>
+      <div class="seg" role="group" aria-label="View mode">
+        <button type="button" data-mode="edit">Edit</button>
+        <button type="button" data-mode="split" class="on">Split</button>
+        <button type="button" data-mode="prev">Preview</button>
       </div>
     </div>
-    <div class="ed-toolbar" role="toolbar" aria-label="書式"></div>
+    <div class="ed-toolbar" role="toolbar" aria-label="Formatting"></div>
     <div class="ed-split">
-      <div class="ed-edit"><textarea id="ed-textarea" spellcheck="false" aria-label="Markdown ソース"></textarea></div>
-      <div class="ed-prev"><div class="md-body" id="ed-preview" aria-label="プレビュー"></div></div>
+      <div class="ed-edit"><textarea id="ed-textarea" spellcheck="false" aria-label="Markdown source"></textarea></div>
+      <div class="ed-prev"><div class="md-body" id="ed-preview" aria-label="Preview"></div></div>
     </div>
     <div class="ed-status">
       <span id="ed-count"></span><span id="ed-mtime"></span>
       <span class="grow"></span>
-      <button type="button" class="ed-save-btn">保存 <kbd>⌘S</kbd></button>
+      <button type="button" class="ed-save-btn">Save <kbd>⌘S</kbd></button>
     </div>`;
   ed.els = {
     view, banner: $('#ed-banner', view), ta: $('#ed-textarea', view), prev: $('#ed-preview', view),
@@ -210,26 +210,26 @@ function showBanner(kind, draft) {
   b.hidden = false;
   if (kind === 'draft') {
     b.className = 'ed-banner conflict-bar';
-    b.innerHTML = `<span class="msg">下書きが残っています（${esc(fmtTime(draft.ts))}）</span>
-      <button type="button" class="b-restore">下書きを復元</button>
-      <button type="button" class="b-discard">破棄</button>`;
+    b.innerHTML = `<span class="msg">A draft is available（${esc(fmtTime(draft.ts))}）</span>
+      <button type="button" class="b-restore">Restore draft</button>
+      <button type="button" class="b-discard">Discard</button>`;
     b.querySelector('.b-restore').addEventListener('click', () => {
       ed.els.ta.value = draft.content;
       b.hidden = true;
       markDirty(); renderPrev(); updateStatus();
-      toast('下書きを復元しました');
+      toast('Draft restored');
     });
     b.querySelector('.b-discard').addEventListener('click', () => {
       clearDraft(ed.path); b.hidden = true;
     });
   } else if (kind === 'conflict') {
     b.className = 'ed-banner conflict-bar';
-    b.innerHTML = `<span class="msg">他の場所でこのドキュメントが更新されました</span>
-      <button type="button" class="b-reload">再読込</button>
-      <button type="button" class="b-keep">このまま保持</button>`;
+    b.innerHTML = `<span class="msg">This document was updated elsewhere</span>
+      <button type="button" class="b-reload">Reload</button>
+      <button type="button" class="b-keep">Keep current version</button>`;
     b.querySelector('.b-reload').addEventListener('click', async () => {
       if (ed.dirty) {
-        const ok = await showdialog({ title: '再読込', message: '未保存の変更は破棄されます。よろしいですか？', okText: '破棄して再読込', danger: true });
+        const ok = await showdialog({ title: 'Reload', message: 'Unsaved changes will be lost. Continue?', okText: 'Discard and reload', danger: true });
         if (!ok) return;
       }
       const data = await api('/api/doc', { query: { path: ed.path } });
@@ -239,7 +239,7 @@ function showBanner(kind, draft) {
       b.hidden = true; ed.conflict = false;
     });
     b.querySelector('.b-keep').addEventListener('click', () => {
-      // 基准更新为服务端 mtime, 下次保存直接覆盖
+      // 基准更新为服务端 mtime, 下次Save直接覆盖
       api('/api/doc', { query: { path: ed.path } }).then(d => { ed.baseMtime = d.mtime; }).catch(() => {});
       b.hidden = true; ed.conflict = false;
     });
@@ -252,17 +252,17 @@ function buildToolbar() {
   const btn = (name, label, title) =>
     `<button type="button" class="tb" data-cmd="${name}" title="${title}" aria-label="${title}">${label}</button>`;
   bar.innerHTML = [
-    btn('h1', 'H1', '見出し1'), btn('h2', 'H2', '見出し2'), btn('h3', 'H3', '見出し3'),
+    btn('h1', 'H1', 'Heading 1'), btn('h2', 'H2', 'Heading 2'), btn('h3', 'H3', 'Heading 3'),
     '<span class="sep"></span>',
-    btn('bold', icon('bold', 15), '太字'),
-    btn('italic', icon('italic', 15), '斜体'),
+    btn('bold', icon('bold', 15), 'Bold'),
+    btn('italic', icon('italic', 15), 'Italic'),
     '<span class="sep"></span>',
-    btn('ul', icon('list', 15), 'リスト'),
-    btn('quote', icon('quote', 15), '引用'),
-    btn('code', icon('code', 15), 'コード'),
+    btn('ul', icon('list', 15), 'List'),
+    btn('quote', icon('quote', 15), 'Quote'),
+    btn('code', icon('code', 15), 'Code'),
     '<span class="sep"></span>',
-    btn('link', icon('link', 15), 'リンク'),
-    btn('image', icon('image', 15), '画像'),
+    btn('link', icon('link', 15), 'Link'),
+    btn('image', icon('image', 15), 'Image'),
   ].join('');
   bar.addEventListener('click', e => {
     const b = e.target.closest('.tb');
@@ -290,7 +290,7 @@ function doCmd(cmd) {
       // 切换取消
       setVal(v.slice(0, s - mark.length) + sel + v.slice(epos + mark.length), s - mark.length, epos - mark.length);
     } else {
-      const inner = sel || (cmd === 'code' ? 'code' : cmd === 'bold' ? '太字' : '斜体');
+      const inner = sel || (cmd === 'code' ? 'code' : cmd === 'bold' ? 'Bold' : 'Italic');
       setVal(v.slice(0, s) + mark + inner + mark + v.slice(epos), s + mark.length, s + mark.length + inner.length);
     }
   } else if (cmd === 'h1' || cmd === 'h2' || cmd === 'h3') {
@@ -307,7 +307,7 @@ function doCmd(cmd) {
     const nl = lines.join('\n');
     setVal(v.slice(0, lineStart) + nl + v.slice(lineEnd), lineStart, lineStart + nl.length);
   } else if (cmd === 'link') {
-    const inner = sel || 'リンク';
+    const inner = sel || 'Link';
     setVal(v.slice(0, s) + `[${inner}](url)` + v.slice(epos), s + 1 + inner.length + 3, s + 1 + inner.length + 6);
   } else if (cmd === 'image') {
     $('#file-input').dataset.target = ed.path;
@@ -334,10 +334,10 @@ function updateStatus() {
   const v = ed.els.ta.value;
   const chars = [...v.replace(/\s/g, '')].length;
   const lines = v.split('\n').length;
-  ed.els.count.textContent = `${chars} 字・${lines} 行`;
-  ed.els.mtime.textContent = ed.dirty ? '未保存' : fmtTime(ed.baseMtime);
+  ed.els.count.textContent = `${chars}  chars · ${lines}  lines`;
+  ed.els.mtime.textContent = ed.dirty ? 'Unsaved' : fmtTime(ed.baseMtime);
   ed.els.view.classList.toggle('dirty', ed.dirty);
-  setSaveState(ed.dirty ? 'dirty' : 'saved', ed.dirty ? '未保存' : '保存済み');
+  setSaveState(ed.dirty ? 'dirty' : 'saved', ed.dirty ? 'Unsaved' : 'Saved');
 }
 
 function setDirty(d) {
@@ -411,7 +411,7 @@ async function onPaste(e) {
 /* ---------- 图片上传 ---------- */
 async function uploadImage(file) {
   const ta = ed.els.ta;
-  const ph = '![アップロード中…]';
+  const ph = '![Uploading…]';
   insertAtCursor(ph);
   const fd = new FormData();
   fd.append('path', ed.path);
@@ -419,10 +419,10 @@ async function uploadImage(file) {
   try {
     const data = await api('/api/image', { method: 'POST', form: fd });
     replaceText(ph, data.markdown);
-    toast('画像をアップロードしました');
+    toast('Image uploaded');
   } catch (err) {
     replaceText(ph, '');
-    toast('アップロード失敗: ' + err.message, 'err');
+    toast('Upload failed: ' + err.message, 'err');
   }
 }
 function insertAtCursor(text) {
@@ -452,21 +452,21 @@ export function initFileInput() {
 export async function save() {
   if (!ed.path || ed.saving || !ed.dirty) return;
   ed.saving = true;
-  setSaveState('saving', '保存中…');
+  setSaveState('saving', 'Saving…');
   try {
     const data = await api('/api/doc/save', { method: 'POST', json: { path: ed.path, content: ed.els.ta.value, overwrite: true } });
     ed.baseMtime = Math.floor(Date.now() / 1000);
     ed.dirty = false;
     clearDraft(ed.path);
     updateStatus();
-    setSaveState('saved', '保存済み');
-    toast('保存しました');
+    setSaveState('saved', 'Saved');
+    toast('Saved');
     search.invalidate();
     tree.refresh();
     return data;
   } catch (e) {
-    setSaveState('dirty', '未保存');
-    toast('保存失敗: ' + e.message, 'err');
+    setSaveState('dirty', 'Unsaved');
+    toast('SaveFailed: ' + e.message, 'err');
     throw e;
   } finally {
     ed.saving = false;
@@ -482,7 +482,7 @@ function setSaveState(cls, label) {
 /* ---------- 退出 ---------- */
 export async function backToRead() {
   if (ed.dirty) {
-    const v = await showdialog({ title: '未保存の変更', message: '保存せずに閉じますか？（下書きは保持されます）', okText: '閉じる' });
+    const v = await showdialog({ title: 'Unsaved changes', message: 'Close without saving? The draft will be kept.', okText: 'Close' });
     if (!v) return;
   }
   const path = ed.path;
@@ -529,7 +529,7 @@ export function startConflictWatch() {
   }, 20000);
 }
 
-/* ================= 文档操作流 ================= */
+/* ================= 文档Actions流 ================= */
 
 export async function newDocFlow(dirPath) {
   let dir = dirPath;
@@ -538,19 +538,19 @@ export async function newDocFlow(dirPath) {
     const dirs = [];
     const walk = nodes => { for (const nd of nodes || []) { if (nd.type === 'dir') { dirs.push(nd.path); walk(nd.children); } } };
     walk(tree.treeState.data);
-    const items = [{ label: '（ルート）', value: '' }, ...dirs.map(d => ({ label: d, value: d }))];
+    const items = [{ label: '（Root）', value: '' }, ...dirs.map(d => ({ label: d, value: d }))];
     dir = await menu($('#btn-newdoc-top'), items);
     if (dir === null) return;
   }
   const name = await showdialog({
-    title: '新規ドキュメント',
-    message: dir ? `${dir} に作成します。` : 'ルートに作成します。',
-    input: true, placeholder: 'タイトル', okText: '作成',
+    title: 'New document',
+    message: dir ? `${dir} Create in` : 'Create in Root.',
+    input: true, placeholder: 'Title', okText: 'Create',
   });
   if (!name) return;
   try {
     await api('/api/doc/create', { method: 'POST', json: { dir: dir || '', path: name, title: name } });
-    toast('作成しました');
+    toast('Created');
     search.invalidate();
     await tree.refresh();
     location.hash = '#/doc/' + encodeURIComponent((dir ? dir + '/' : '') + name + (name.endsWith('.md') ? '' : '.md'));
@@ -562,7 +562,7 @@ export async function newDocFlow(dirPath) {
 export async function renameFlow(node) {
   const cur = node.name.replace(/\.md$/, '');
   const name = await showdialog({
-    title: '名前変更', message: node.path, input: true, value: cur, okText: '変更',
+    title: 'Rename', message: node.path, input: true, value: cur, okText: 'Change',
   });
   if (!name || name === cur) return;
   try {
@@ -577,7 +577,7 @@ export async function moveFlow(node) {
   const dirs = [];
   const walk = nodes => { for (const nd of nodes || []) { if (nd.type === 'dir' && nd.path !== dirname(node.path)) { dirs.push(nd.path); walk(nd.children); } } };
   walk(tree.treeState.data);
-  const items = [{ label: '（ルート）', value: '' }, ...dirs.map(d => ({ label: d, value: d }))];
+  const items = [{ label: '（Root）', value: '' }, ...dirs.map(d => ({ label: d, value: d }))];
   const dest = await menu($('.tree .file.cur .a-more') || $('#btn-newdoc-top'), items);
   if (dest === null) return;
   try {
@@ -595,7 +595,7 @@ export async function moveFlow(node) {
     });
     await api('/api/doc/save', { method: 'POST', json: { path: (dest ? dest + '/' : '') + fname, content } });
     await api('/api/doc/delete', { method: 'POST', json: { path: node.path } });
-    toast('移動しました');
+    toast('Moved');
     search.invalidate();
     await tree.refresh();
     if (tree.treeState.current === node.path) location.hash = '#/doc/' + encodeURIComponent((dest ? dest + '/' : '') + fname);
@@ -621,12 +621,12 @@ function relFromTo(fromDir, toDir) {
 
 export async function deleteFlow(node) {
   const ok = await showdialog({
-    title: '削除', message: `「${node.title || node.name}」を削除します。元に戻せません。`, okText: '削除', danger: true,
+    title: 'Delete', message: `Delete “${node.title || node.name}”.This cannot be undone.`, okText: 'Delete', danger: true,
   });
   if (!ok) return;
   try {
     await api('/api/doc/delete', { method: 'POST', json: { path: node.path } });
-    toast('削除しました');
+    toast('Deleted');
     search.invalidate();
     await tree.refresh();
     if (tree.treeState.current === node.path) location.hash = '#/';

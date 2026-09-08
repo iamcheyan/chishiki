@@ -83,7 +83,7 @@ html[data-theme="github-light"]{
   --gh-pre-bg:#f6f8fa;                /* GitHub 代码块底 */
   --gh-pre-border:#d1d9e0b3;
   --gh-th-bg:#f6f8fa;                 /* 表头底 */
-  --gh-quote:#59636e;                 /* 引用文字色 */
+  --gh-quote:#59636e;                 /* Quote文字色 */
   --gh-quote-bar:#d1d9e0;
 }
 html[data-theme="github-dark"]{
@@ -109,6 +109,40 @@ html[data-theme="github-dark"]{
   --gh-th-bg:#151b23;
   --gh-quote:#9198a1;
   --gh-quote-bar:#3d444d;
+}
+
+/* ===== 额外主题: 低饱和、长时间阅读友好 ===== */
+html[data-theme="nord"]{
+  --bg:#2E3440; --bg-elev:#3B4252; --ink:#ECEFF4; --muted:#AAB4C4;
+  --rule:rgba(236,239,244,.16); --rule-strong:rgba(236,239,244,.30);
+  --accent:#88C0D0; --sel:rgba(136,192,208,.20); --soft:rgba(236,239,244,.07);
+  --scrim:rgba(20,24,31,.68); --shadow-pop:0 18px 50px rgba(20,24,31,.55);
+  --shadow-soft:0 8px 28px rgba(20,24,31,.35); --mark-bg:rgba(235,203,139,.30);
+  --warn-bg:rgba(208,135,112,.13); --tip-bg:rgba(136,192,208,.10); --muted-2:#C5CEDA;
+}
+html[data-theme="solarized-light"]{
+  --bg:#FDF6E3; --bg-elev:#EEE8D5; --ink:#073642; --muted:#657B83;
+  --rule:rgba(7,54,66,.16); --rule-strong:rgba(7,54,66,.30);
+  --accent:#268BD2; --sel:rgba(38,139,210,.14); --soft:rgba(7,54,66,.06);
+  --scrim:rgba(0,43,54,.44); --shadow-pop:0 18px 50px rgba(0,43,54,.18);
+  --shadow-soft:0 8px 28px rgba(0,43,54,.10); --mark-bg:rgba(181,137,0,.28);
+  --warn-bg:rgba(203,75,22,.10); --tip-bg:rgba(38,139,210,.08); --muted-2:#426A73;
+}
+html[data-theme="solarized-dark"]{
+  --bg:#002B36; --bg-elev:#073642; --ink:#EEE8D5; --muted:#839496;
+  --rule:rgba(238,232,213,.16); --rule-strong:rgba(238,232,213,.30);
+  --accent:#2AA198; --sel:rgba(42,161,152,.20); --soft:rgba(238,232,213,.07);
+  --scrim:rgba(0,20,25,.70); --shadow-pop:0 18px 50px rgba(0,20,25,.60);
+  --shadow-soft:0 8px 28px rgba(0,20,25,.40); --mark-bg:rgba(181,137,0,.30);
+  --warn-bg:rgba(203,75,22,.14); --tip-bg:rgba(42,161,152,.10); --muted-2:#B4C4C3;
+}
+html[data-theme="gruvbox-dark"]{
+  --bg:#282828; --bg-elev:#3C3836; --ink:#EBDBB2; --muted:#A89984;
+  --rule:rgba(235,219,178,.16); --rule-strong:rgba(235,219,178,.30);
+  --accent:#FABD2F; --sel:rgba(250,189,47,.20); --soft:rgba(235,219,178,.07);
+  --scrim:rgba(20,18,16,.72); --shadow-pop:0 18px 50px rgba(20,18,16,.60);
+  --shadow-soft:0 8px 28px rgba(20,18,16,.42); --mark-bg:rgba(254,128,25,.34);
+  --warn-bg:rgba(251,73,52,.13); --tip-bg:rgba(131,165,152,.10); --muted-2:#C7B895;
 }
 /* GitHub 渲染细节: markdown 正文排版向 github.com 对齐 */
 html[data-theme^="github"] .md-body{
@@ -339,7 +373,7 @@ kbd{
 .tree .dir:not(.open) > .row .caret svg{ transform:rotate(0deg); }
 .tree .dir.empty > .row .caret{ visibility:hidden; }   /* 空目录无箭头 */
 .tree .dir.empty > .kids::after{
-  content:"（空）"; display:block; color:var(--muted); font-size:12px; padding:3px 8px;
+  content:"(empty)"; display:block; color:var(--muted); font-size:12px; padding:3px 8px;
 }
 .tree .star-on{ color:var(--accent); }
 
@@ -416,8 +450,8 @@ kbd{
   display:block; font-family:var(--font-sans); font-size:11px; letter-spacing:.2em;
   color:var(--accent); margin-bottom:.3em;
 }
-.md-body blockquote.callout-warn::before{ content:"注記"; }
-.md-body blockquote.callout-tip::before{ content:"参考"; }
+.md-body blockquote.callout-warn::before{ content:"Note"; }
+.md-body blockquote.callout-tip::before{ content:"Tip"; }
 
 /* ===== Outline ===== */
 #outline{
@@ -838,7 +872,7 @@ pre:hover .pre-copy, .pre-copy:focus-visible{ opacity:1; }
 .md-body .task-txt{ flex:1; }
 .md-body .task-box[aria-checked="true"] + .task-txt{ color:var(--muted); }
 
-/* ===== 顶栏 検索/新規 ===== */
+/* ===== 顶栏 Search/New ===== */
 .topbar-actions{ display:flex; align-items:center; gap:8px; margin-left:12px; flex:none; }
 .top-search{
   display:inline-flex; align-items:center; gap:7px;

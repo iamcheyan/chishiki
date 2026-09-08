@@ -57,7 +57,7 @@ export async function api(path, opts = {}) {
   try {
     res = await fetch(url, init);
   } catch (e) {
-    throw new Error('ネットワークエラー');
+    throw new Error('Network error');
   }
   let data = null;
   try { data = await res.json(); } catch (e) { /* ignore */ }
@@ -99,7 +99,7 @@ export function showdialog(o = {}) {
         ${o.message ? `<p>${esc(o.message)}</p>` : ''}
         ${hasInput ? `<input type="text" value="${esc(o.value || '')}" placeholder="${esc(o.placeholder || '')}" spellcheck="false">` : ''}
         <div class="dlg-btns">
-          <button type="button" class="dlg-cancel">${esc(o.cancelText || 'キャンセル')}</button>
+          <button type="button" class="dlg-cancel">${esc(o.cancelText || 'Cancel')}</button>
           <button type="button" class="dlg-ok ${o.danger ? 'danger' : 'primary'}">${esc(o.okText || 'OK')}</button>
         </div>
       </div>`;

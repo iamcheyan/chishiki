@@ -1,22 +1,27 @@
 /* app.js — 引导 + hash 路由 + 主题 + 快捷键 + 抽屉/大纲/返回顶部 */
 const VSN = (import.meta.url.match(/\?v=\d+/) || [''])[0];
-import { $, $$, menu } from './ui.js?v=24';
-import * as tree from './tree.js?v=24';
-import * as viewer from './viewer.js?v=24';
-import * as editor from './editor.js?v=24';
-import * as search from './search.js?v=24';
-import * as gallery from './gallery.js?v=24';
-import * as health from './health.js?v=24';
-import * as gitpanel from './git.js?v=24';
+import { $, $$, menu } from './ui.js?v=26';
+import * as tree from './tree.js?v=26';
+import * as viewer from './viewer.js?v=26';
+import * as editor from './editor.js?v=26';
+import * as search from './search.js?v=26';
+import * as gallery from './gallery.js?v=26';
+import * as health from './health.js?v=26';
+import * as gitpanel from './git.js?v=26';
 
 /* ---------- 主题 ---------- */
 function applyTheme(t) {
   document.documentElement.dataset.theme = t;
   try { localStorage.setItem('chishiki:theme', t); } catch (e) { /* noop */ }
-  const dark = t === 'dark' || t === 'github-dark';
+  const dark = ['dark', 'github-dark', 'nord', 'solarized-dark', 'gruvbox-dark'].includes(t);
   document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
   const mc = $('meta[name="theme-color"]');
-  const colors = { 'light': '#F7F3EA', 'dark': '#141414', 'github-light': '#ffffff', 'github-dark': '#0d1117' };
+  const colors = {
+    'light': '#F7F3EA', 'dark': '#141414',
+    'github-light': '#ffffff', 'github-dark': '#0d1117',
+    'nord': '#2E3440', 'solarized-light': '#FDF6E3',
+    'solarized-dark': '#002B36', 'gruvbox-dark': '#282828'
+  };
   if (mc) mc.content = colors[t] || '#F7F3EA';
 }
 function currentTheme() {
@@ -26,15 +31,19 @@ function currentTheme() {
 }
 function initTheme() {
   const saved = localStorage.getItem('chishiki:theme');
-  if (saved === 'github-light' || saved === 'github-dark') applyTheme(saved);
-  else applyTheme(currentTheme());
+  const themes = ['light', 'dark', 'github-light', 'github-dark', 'nord', 'solarized-light', 'solarized-dark', 'gruvbox-dark'];
+  applyTheme(themes.includes(saved) ? saved : currentTheme());
   $('#btn-theme').addEventListener('click', e => {
     const cur = document.documentElement.dataset.theme || 'light';
     menu(e.currentTarget, [
-      { label: 'ライト（紙と墨）', value: 'light', checked: cur === 'light' },
-      { label: 'ダーク', value: 'dark', checked: cur === 'dark' },
+      { label: 'Light (paper and ink)', value: 'light', checked: cur === 'light' },
+      { label: 'Dark', value: 'dark', checked: cur === 'dark' },
       { label: 'GitHub Light', value: 'github-light', checked: cur === 'github-light' },
       { label: 'GitHub Dark', value: 'github-dark', checked: cur === 'github-dark' },
+      { label: 'Nord', value: 'nord', checked: cur === 'nord' },
+      { label: 'Solarized Light', value: 'solarized-light', checked: cur === 'solarized-light' },
+      { label: 'Solarized Dark', value: 'solarized-dark', checked: cur === 'solarized-dark' },
+      { label: 'Gruvbox Dark', value: 'gruvbox-dark', checked: cur === 'gruvbox-dark' },
     ]).then(v => { if (v) applyTheme(v); });
   });
 }
@@ -73,12 +82,12 @@ async function route() {
     try {
       await viewer.showDoc(path, anchor);
     } catch (e) {
-      $('#md-body').innerHTML = `<p>読み込み失敗: ${e.message}</p>`;
+      $('#md-body').innerHTML = `<p>Load failed: ${e.message}</p>`;
     }
   } else if (kind === 'edit' && rest) {
     const path = decodeURIComponent(rest);
     showView('view-editor');
-    setCrumb(path + ' — 編集');
+    setCrumb(path + ' — Edit');
     tree.setCurrent(path);
     try {
       await editor.openEditor(path);
@@ -88,18 +97,18 @@ async function route() {
     }
   } else if (kind === 'git') {
     showView('view-git');
-    setCrumb('バージョン');
+    setCrumb('Version');
     tree.setCurrent(null);
     await gitpanel.showGit();
   } else if (kind === 'health') {
     showView('view-health');
-    setCrumb('ヘルスチェック');
+    setCrumb('Health check');
     tree.setCurrent(null);
     await health.showHealth();
   } else if (kind === 'gallery') {
     const dir = rest ? decodeURIComponent(rest) : '';
     showView('view-gallery');
-    setCrumb(dir ? dir + ' — ギャラリー' : 'ギャラリー');
+    setCrumb(dir ? dir + ' — Gallery' : 'Gallery');
     tree.setCurrent(null);
     await gallery.showGallery(dir);
   } else {
@@ -172,7 +181,7 @@ function initFontToggle() {
   const btn = $('#btn-font');
   if (!btn || btn._fontBound) return;
   btn._fontBound = true;
-  btn.textContent = 'あ';
+  btn.textContent = 'A';
   btn.addEventListener('click', () => {
     const cur = document.documentElement.getAttribute('data-font') || 'serif';
     const next = cur === 'serif' ? 'sans' : 'serif';
@@ -226,7 +235,7 @@ document.addEventListener('keydown', e => {
   } else if (mod && (e.key === 's' || e.key === 'S')) {
     if (!$('#view-editor').hidden) { e.preventDefault(); editor.save(); }
   } else if (mod && (e.key === 'e' || e.key === 'E')) {
-    // 文档视图 → 編集(帮助面板承诺的 ⌘E, 此前未实现)
+    // 文档视图 → Edit(帮助面板承诺的 ⌘E, 此前未实现)
     const cur = viewer.state.currentPath;
     if (cur && $('#view-doc').hidden === false) { e.preventDefault(); location.hash = '#/edit/' + encodeURIComponent(cur); }
   } else if (mod && (e.key === 'n' || e.key === 'N')) {
@@ -303,8 +312,8 @@ function renderCrumb(path) {
       const cp = document.createElement('button');
       cp.type = 'button';
       cp.className = 'crumb-copy';
-      cp.setAttribute('aria-label', 'リンクをコピー');
-      cp.title = 'リンクをコピー';
+      cp.setAttribute('aria-label', 'Copy link');
+      cp.title = 'Copy link';
       cp.addEventListener('click', async () => {
         const url = location.origin + '/#/doc/' + encodeURIComponent(path);
         try { await navigator.clipboard.writeText(url); }
@@ -313,7 +322,7 @@ function renderCrumb(path) {
           ta.value = url; document.body.appendChild(ta); ta.select();
           document.execCommand('copy'); ta.remove();
         }
-        import('./ui.js' + VSN).then(m => m.toast('リンクをコピーしました'));
+        import('./ui.js' + VSN).then(m => m.toast('Link copied'));
       });
       el.appendChild(cp);
     } else {
@@ -332,11 +341,11 @@ function renderCrumb(path) {
 
 /* ---------- 快捷键帮助面板(? 呼出) ---------- */
 const SHORTCUTS = [
-  ['⌘/Ctrl + K', '全文検索'],
-  ['⌘/Ctrl + E', 'ドキュメントを編集'],
-  ['⌘/Ctrl + S', '保存（エディタ）'],
-  ['Esc', '検索・ダイアログを閉じる'],
-  ['?', 'このヘルプ'],
+  ['⌘/Ctrl + K', 'Full-text search'],
+  ['⌘/Ctrl + E', 'Edit document'],
+  ['⌘/Ctrl + S', 'Save (editor)'],
+  ['Esc', 'Close search or dialog'],
+  ['?', 'This help'],
 ];
 export function toggleShortcutHelp() {
   let el = document.getElementById('shortcut-help');
@@ -347,9 +356,9 @@ export function toggleShortcutHelp() {
   el.addEventListener('click', e => { if (e.target === el) el.hidden = true; });
   const card = document.createElement('div');
   card.className = 'sc-help';
-  card.innerHTML = '<h2>キーボードショートカット</h2>' +
+  card.innerHTML = '<h2>Keyboard shortcuts</h2>' +
     SHORTCUTS.map(([k, v]) => `<div class="sc-row"><kbd>${k}</kbd><span>${v}</span></div>`).join('') +
-    '<button type="button" class="sc-close">閉じる</button>';
+    '<button type="button" class="sc-close">Close</button>';
   card.querySelector('.sc-close').addEventListener('click', () => { el.hidden = true; });
   el.appendChild(card);
   document.body.appendChild(el);

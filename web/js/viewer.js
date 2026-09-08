@@ -1,5 +1,5 @@
 /* viewer.js — 阅读渲染(图片重写/表格包裹) + 大纲滚动spy + Lightbox */
-import { $, $$, esc, api, fileUrl, icon, fmtTime } from './ui.js?v=24';
+import { $, $$, esc, api, fileUrl, icon, fmtTime } from './ui.js?v=26';
 
 export const state = { currentPath: null, pendingAnchor: null };
 
@@ -165,7 +165,7 @@ export async function showDoc(path, anchor) {
   imgs.forEach(im => {
     const raw = im.getAttribute('src') || '';
     im.src = fileUrl(path, raw);
-    if (!im.alt) im.alt = im.getAttribute('title') || '画像';
+    if (!im.alt) im.alt = im.getAttribute('title') || 'Image';
     lbImages.push({ url: im.src, alt: im.alt, name: raw.split('/').pop() });
   });
   /* 代码块: 快速复制按钮(右上角, hover 显现, 自绘无原生) */
@@ -174,14 +174,14 @@ export async function showDoc(path, anchor) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'pre-copy';
-    btn.textContent = 'コピー';
-    btn.setAttribute('aria-label', 'コードをコピー');
+    btn.textContent = 'Copy';
+    btn.setAttribute('aria-label', 'Copy code');
     btn.addEventListener('click', async () => {
       const code = pre.querySelector('code');
       const text = (code || pre).textContent;
       try {
         await navigator.clipboard.writeText(text);
-        btn.textContent = '✓ コピー済み';
+        btn.textContent = '✓ Copied';
         btn.classList.add('copied');
       } catch (e) {
         // 剪贴板不可用(非安全上下文): textarea 兜底
@@ -189,10 +189,10 @@ export async function showDoc(path, anchor) {
         ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
         document.body.appendChild(ta); ta.select();
         document.execCommand('copy'); ta.remove();
-        btn.textContent = '✓ コピー済み';
+        btn.textContent = '✓ Copied';
         btn.classList.add('copied');
       }
-      setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 1600);
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1600);
     });
     pre.appendChild(btn);
   });
@@ -201,7 +201,7 @@ export async function showDoc(path, anchor) {
     im.addEventListener('click', () => lightboxOpen(lbImages, i));
     im.setAttribute('tabindex', '0');
     im.setAttribute('role', 'button');
-    im.setAttribute('aria-label', '画像を拡大');
+    im.setAttribute('aria-label', 'Open image');
     im.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); lightboxOpen(lbImages, i); } });
   });
 

@@ -25,7 +25,7 @@
 - **收藏 / 项目高亮**（侧栏顶部 全部/收藏 两个 tab）
 - **健康检查**（断链/孤儿图片清理）+ **Git 版本**（历史/恢复旧版/提交）
 - **导出 PDF**（文档页右上角按钮）
-- 四种主题：纸墨亮/暗 + GitHub Light/Dark
+- 八种主题：纸墨亮/暗、GitHub Light/Dark、Nord、Solarized Light/Dark、Gruvbox Dark
 
 ## 图片
 
